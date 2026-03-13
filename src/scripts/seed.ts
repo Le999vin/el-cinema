@@ -1,6 +1,6 @@
 import "@/lib/load-env";
 
-import { hasTmdb } from "@/lib/env";
+import { hasGooglePlaces, hasTmdb } from "@/lib/env";
 import { hashPassword } from "@/services/auth/password-core";
 import { eq, inArray } from "drizzle-orm";
 import { getDb } from "@/services/db/client";
@@ -8,7 +8,7 @@ import { upsertCinemas } from "@/services/db/repositories/cinema-repository";
 import { upsertMovies } from "@/services/db/repositories/movie-repository";
 import { bulkInsertShowtimes } from "@/services/db/repositories/showtime-repository";
 import { createUser } from "@/services/db/repositories/user-repository";
-import { syncMovies } from "@/services/external/sync";
+import { syncCinemas, syncMovies, syncSeries } from "@/services/external/sync";
 import { cinemas, movies, showtimes, userPreferences, users } from "@/services/db/schema";
 import { demoAdminUser, demoCinemas, demoMovies, buildDemoShowtimes } from "@/lib/dev-seed-data";
 
@@ -98,18 +98,29 @@ const run = async () => {
     })),
   );
 
-  let movieSyncMessage = "";
-  if (hasTmdb) {
+  let cinemaSyncMessage = "";
+  if (hasGooglePlaces) {
     try {
-      const result = await syncMovies();
-      movieSyncMessage = ` TMDb sync imported ${result.synced} movies.`;
+      const cinemaResult = await syncCinemas();
+      cinemaSyncMessage = ` Google Places sync imported ${cinemaResult.synced} cinemas.`;
     } catch (error) {
-      console.warn("TMDb movie sync skipped during seed.", error);
-      movieSyncMessage = " TMDb sync skipped; demo movie catalog remains available.";
+      console.warn("Google Places cinema sync skipped during seed.", error);
+      cinemaSyncMessage = " Google Places sync skipped; demo cinema catalog remains available.";
     }
   }
 
-  console.log(`Seed complete.${movieSyncMessage}`);
+  let tmdbSyncMessage = "";
+  if (hasTmdb) {
+    try {
+      const [movieResult, seriesResult] = await Promise.all([syncMovies(), syncSeries()]);
+      tmdbSyncMessage = ` TMDb sync imported ${movieResult.synced} movies and ${seriesResult.synced} series.`;
+    } catch (error) {
+      console.warn("TMDb catalog sync skipped during seed.", error);
+      tmdbSyncMessage = " TMDb sync skipped; demo movie catalog remains available.";
+    }
+  }
+
+  console.log(`Seed complete.${cinemaSyncMessage}${tmdbSyncMessage}`);
 };
 
 run().catch((error) => {

@@ -15,9 +15,9 @@ export const Sidebar = () => {
     <aside className="flex h-screen w-[280px] shrink-0 flex-col border-r border-[color:var(--border-subtle)] bg-[color:var(--sidebar)] px-6 py-8">
       <div>
         <p className="font-[family-name:var(--font-display)] text-3xl font-semibold text-[color:var(--accent)]">CinemaScope</p>
-        <p className="mt-2 text-sm text-[color:var(--text-muted)]">Zurich cinema curation</p>
+        <p className="mt-2 text-sm text-[color:var(--text-muted)]">Swiss cinema catalog</p>
         <div className="mt-4">
-          <Badge>Zurich MVP</Badge>
+          <Badge>Switzerland DB-first</Badge>
         </div>
       </div>
 
@@ -64,4 +64,3 @@ export const Sidebar = () => {
     </aside>
   );
 };
-

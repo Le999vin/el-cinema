@@ -1,6 +1,8 @@
-import { filterCinemas, sortCinemas, createCinemaSearchFilter, createCityFilter } from "@/domain/logic/cinema";
-import type { CinemaDetails, CinemaSummary } from "@/domain/types";
+import type { Cinema, CinemaDetails, CinemaSummary } from "@/domain/types";
 import { loadCinemasCatalog, loadMoviesCatalog, loadShowtimesCatalog } from "@/features/catalog/load-catalog";
+import { ensureCinemaDetailsFresh } from "@/features/cinemas/enrich-cinemas";
+import { hasDatabase } from "@/lib/env";
+import { listCinemaActivity, queryCinemas } from "@/services/db/repositories/cinema-repository";
 
 export interface CinemaListQuery {
   search?: string;
@@ -8,42 +10,210 @@ export interface CinemaListQuery {
   sort?: "name" | "showtimes";
 }
 
-export const getCinemas = async (query: CinemaListQuery = {}): Promise<CinemaSummary[]> => {
-  const [cinemas, showtimes] = await Promise.all([loadCinemasCatalog(), loadShowtimesCatalog()]);
+interface CinemaPageData {
+  summaries: CinemaSummary[];
+  mapCinemas: Cinema[];
+}
 
-  const filters = [createCinemaSearchFilter(query.search ?? "")];
-  if (query.city) {
-    filters.push(createCityFilter(query.city));
+const buildCinemaSearchMatcher = (search: string) => {
+  const normalized = search.trim().toLowerCase();
+  if (!normalized) {
+    return () => true;
   }
 
-  const filtered = filterCinemas(cinemas, filters);
-  const sorted = sortCinemas(filtered, query.sort ?? "name");
+  return (cinema: Cinema) =>
+    [
+      cinema.name,
+      cinema.address,
+      cinema.city,
+      cinema.district ?? "",
+      cinema.types.join(" "),
+      cinema.chain ?? "",
+    ]
+      .join(" ")
+      .toLowerCase()
+      .includes(normalized);
+};
 
-  return sorted.map((cinema) => {
-    const cinemaShowtimes = showtimes.filter((showtime) => showtime.cinemaId === cinema.id);
-    const movieCount = new Set(cinemaShowtimes.map((showtime) => showtime.movieId)).size;
+const buildCityMatcher = (city: string) => {
+  const normalized = city.trim().toLowerCase();
+  if (!normalized) {
+    return () => true;
+  }
+
+  return (cinema: Cinema) => cinema.city.toLowerCase() === normalized;
+};
+
+const sortCinemaRows = (
+  cinemas: readonly Cinema[],
+  activityByCinemaId: ReadonlyMap<string, { showtimeCount: number }>,
+  mode: NonNullable<CinemaListQuery["sort"]>,
+) => {
+  const copy = [...cinemas];
+
+  if (mode === "showtimes") {
+    return copy.sort((left, right) => {
+      const leftCount = activityByCinemaId.get(left.id)?.showtimeCount ?? 0;
+      const rightCount = activityByCinemaId.get(right.id)?.showtimeCount ?? 0;
+
+      if (rightCount !== leftCount) {
+        return rightCount - leftCount;
+      }
+
+      return left.name.localeCompare(right.name, "en");
+    });
+  }
+
+  return copy.sort((left, right) => left.name.localeCompare(right.name, "en"));
+};
+
+const buildCinemaSummaries = (
+  cinemas: readonly Cinema[],
+  activityByCinemaId: ReadonlyMap<string, { showtimeCount: number; movieCount: number }>,
+): CinemaSummary[] =>
+  cinemas.map((cinema) => {
+    const activity = activityByCinemaId.get(cinema.id);
 
     return {
       id: cinema.id,
       name: cinema.name,
       address: cinema.address,
       city: cinema.city,
+      region: cinema.region,
       district: cinema.district,
       websiteUrl: cinema.websiteUrl,
-      movieCount,
-      showtimeCount: cinemaShowtimes.length,
+      rating: cinema.rating,
+      googleMapsUri: cinema.googleMapsUri,
+      types: cinema.types,
+      movieCount: activity?.movieCount ?? 0,
+      showtimeCount: activity?.showtimeCount ?? 0,
     };
   });
+
+const buildFallbackCinemaPageData = async (query: CinemaListQuery): Promise<CinemaPageData> => {
+  const [cinemas, showtimes] = await Promise.all([loadCinemasCatalog(), loadShowtimesCatalog()]);
+
+  const filtered = cinemas.filter((cinema) => {
+    return buildCinemaSearchMatcher(query.search ?? "")(cinema) && buildCityMatcher(query.city ?? "")(cinema);
+  });
+
+  const activityByCinemaId = new Map(
+    filtered.map((cinema) => {
+      const cinemaShowtimes = showtimes.filter((showtime) => showtime.cinemaId === cinema.id);
+      return [
+        cinema.id,
+        {
+          showtimeCount: cinemaShowtimes.length,
+          movieCount: new Set(cinemaShowtimes.map((showtime) => showtime.movieId)).size,
+        },
+      ] as const;
+    }),
+  );
+
+  const sorted = sortCinemaRows(filtered, activityByCinemaId, query.sort ?? "name");
+
+  return {
+    summaries: buildCinemaSummaries(sorted, activityByCinemaId),
+    mapCinemas: sorted,
+  };
+};
+
+const buildDbCinemaPageData = async (query: CinemaListQuery): Promise<CinemaPageData | null> => {
+  const cinemas = await queryCinemas({ search: query.search, city: query.city });
+
+  if (!cinemas.length) {
+    const hasFilters = Boolean(query.search?.trim() || query.city?.trim());
+
+    if (hasFilters) {
+      const catalogProbe = await queryCinemas({ limit: 1 });
+      if (catalogProbe.length) {
+        return { summaries: [], mapCinemas: [] };
+      }
+    } else {
+      return null;
+    }
+  }
+
+  if (!cinemas.length) {
+    return null;
+  }
+
+  const activityRows = await listCinemaActivity(cinemas.map((cinema) => cinema.id));
+  const activityByCinemaId = new Map(
+    activityRows.map((row) => [
+      row.cinemaId,
+      { showtimeCount: row.showtimeCount, movieCount: row.movieCount },
+    ]),
+  );
+
+  const sorted = sortCinemaRows(cinemas, activityByCinemaId, query.sort ?? "name");
+
+  return {
+    summaries: buildCinemaSummaries(sorted, activityByCinemaId),
+    mapCinemas: sorted,
+  };
+};
+
+export const getCinemasPageData = async (query: CinemaListQuery = {}): Promise<CinemaPageData> => {
+  if (hasDatabase) {
+    try {
+      const dbData = await buildDbCinemaPageData(query);
+      if (dbData) {
+        return dbData;
+      }
+    } catch (error) {
+      console.error("Cinema query failed; falling back to catalog loader.", error);
+    }
+  }
+
+  return buildFallbackCinemaPageData(query);
+};
+
+export const getCinemas = async (query: CinemaListQuery = {}): Promise<CinemaSummary[]> => {
+  const { summaries } = await getCinemasPageData(query);
+  return summaries;
 };
 
 export const getCinemaDetails = async (cinemaId: string, userFavouriteCinemaIds: string[] = []): Promise<CinemaDetails | null> => {
-  const [cinemas, movies, showtimes] = await Promise.all([
-    loadCinemasCatalog(),
-    loadMoviesCatalog(),
-    loadShowtimesCatalog(),
-  ]);
+  const loadFallbackCinemaDetails = async () => {
+    const [cinemas, movies, showtimes] = await Promise.all([
+      loadCinemasCatalog(),
+      loadMoviesCatalog(),
+      loadShowtimesCatalog(),
+    ]);
 
-  const cinema = cinemas.find((item) => item.id === cinemaId);
+    return {
+      cinema: cinemas.find((item) => item.id === cinemaId) ?? null,
+      movies,
+      showtimes,
+    };
+  };
+
+  type FallbackCinemaDetails = Awaited<ReturnType<typeof loadFallbackCinemaDetails>>;
+
+  let cinema: FallbackCinemaDetails["cinema"];
+  let movies: FallbackCinemaDetails["movies"];
+  let showtimes: FallbackCinemaDetails["showtimes"];
+
+  if (hasDatabase) {
+    try {
+      ({ cinema, movies, showtimes } = await Promise.all([
+        ensureCinemaDetailsFresh(cinemaId),
+        loadMoviesCatalog(),
+        loadShowtimesCatalog(),
+      ]).then(([resolvedCinema, resolvedMovies, resolvedShowtimes]) => ({
+        cinema: resolvedCinema,
+        movies: resolvedMovies,
+        showtimes: resolvedShowtimes,
+      })));
+    } catch (error) {
+      console.error("Cinema details query failed; falling back to catalog loader.", error);
+      ({ cinema, movies, showtimes } = await loadFallbackCinemaDetails());
+    }
+  } else {
+    ({ cinema, movies, showtimes } = await loadFallbackCinemaDetails());
+  }
+
   if (!cinema) {
     return null;
   }
@@ -73,4 +243,3 @@ export const getCinemaDetails = async (cinemaId: string, userFavouriteCinemaIds:
     isFavourite: userFavouriteCinemaIds.includes(cinema.id),
   };
 };
-

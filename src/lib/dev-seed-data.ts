@@ -3,9 +3,19 @@ import { addDays, setHours, setMinutes } from "date-fns";
 import type { Cinema, Movie, Showtime } from "@/domain/types";
 
 const now = new Date();
+const demoCinemaDefaults = {
+  rating: null,
+  googleMapsUri: null,
+  openingHours: [] as string[],
+  editorialSummary: null,
+  types: ["movie_theater"],
+  sourceUpdatedAt: now,
+  detailsSourceUpdatedAt: null,
+};
 
 export const demoCinemas: Cinema[] = [
   {
+    ...demoCinemaDefaults,
     id: "bca2beff-374f-4f4a-925e-af09f92b11d1",
     googlePlaceId: "ChIJvy7Pzj4LkEcR14vJdrJwQn4",
     name: "Arthouse Le Paris",
@@ -22,6 +32,7 @@ export const demoCinemas: Cinema[] = [
     updatedAt: now,
   },
   {
+    ...demoCinemaDefaults,
     id: "2f6a07e5-fe20-4dbd-92c4-98bf35b4f2d6",
     googlePlaceId: "ChIJf7GR9j4LkEcRp5WajTZJIoE",
     name: "Arthouse Piccadilly",
@@ -38,6 +49,7 @@ export const demoCinemas: Cinema[] = [
     updatedAt: now,
   },
   {
+    ...demoCinemaDefaults,
     id: "1d96fa42-5587-42f8-bf8c-42f66e2d3f79",
     googlePlaceId: "ChIJM7x0L08LkEcR5x7k0SRTfJ4",
     name: "Kosmos",
@@ -54,6 +66,7 @@ export const demoCinemas: Cinema[] = [
     updatedAt: now,
   },
   {
+    ...demoCinemaDefaults,
     id: "e8b127b7-8f5f-4a11-a03f-709e0095e53d",
     googlePlaceId: "ChIJw7J8sT4LkEcRx1pB47nX4Wo",
     name: "Frame",
@@ -70,6 +83,7 @@ export const demoCinemas: Cinema[] = [
     updatedAt: now,
   },
   {
+    ...demoCinemaDefaults,
     id: "99e2f0a8-61f4-4df6-9fba-1776e4f216fd",
     googlePlaceId: "ChIJbVq4fD4LkEcR0TK6U9f2y4U",
     name: "Riffraff",
@@ -86,6 +100,7 @@ export const demoCinemas: Cinema[] = [
     updatedAt: now,
   },
   {
+    ...demoCinemaDefaults,
     id: "58bd0a63-8d89-42f3-9861-2d99867b66e8",
     googlePlaceId: "ChIJ6Q0d3j4LkEcR9l5aQ-9i7sA",
     name: "Corso",
@@ -241,4 +256,3 @@ export const demoAdminUser = {
   displayName: "CinemaScope Admin",
   password: "ChangeMeNow!123",
 };
-

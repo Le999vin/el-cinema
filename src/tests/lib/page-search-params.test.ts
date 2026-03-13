@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   parseCinemasPageSearchParams,
   parseMoviesPageSearchParams,
+  parseSeriesPageSearchParams,
   parseShowtimesPageSearchParams,
   resolvePageSearchParams,
 } from "@/lib/page-search-params";
@@ -44,6 +45,20 @@ describe("page search params", () => {
     expect(params).toEqual({
       search: "",
       sort: "name",
+    });
+  });
+
+  it("applies series defaults and rejects invalid sort values", async () => {
+    const params = await parseSeriesPageSearchParams({
+      search: undefined,
+      genre: "Drama",
+      sort: "newest",
+    });
+
+    expect(params).toEqual({
+      search: "",
+      genre: "Drama",
+      sort: "release-date",
     });
   });
 

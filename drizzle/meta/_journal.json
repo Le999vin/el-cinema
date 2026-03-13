@@ -8,6 +8,27 @@
       "when": 1773403772962,
       "tag": "0000_loose_microchip",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1773412579719,
+      "tag": "0001_true_drax",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1773415298227,
+      "tag": "0002_absurd_venus",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1773415453082,
+      "tag": "0003_parched_smasher",
+      "breakpoints": true
     }
   ]
 }

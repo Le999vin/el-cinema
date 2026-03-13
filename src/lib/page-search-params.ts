@@ -50,6 +50,16 @@ export const parseMoviesPageSearchParams = async (searchParams: PageSearchParams
   };
 };
 
+export const parseSeriesPageSearchParams = async (searchParams: PageSearchParamsInput) => {
+  const params = await resolvePageSearchParams(searchParams);
+
+  return {
+    search: params.search ?? "",
+    genre: params.genre ?? "",
+    sort: pickEnumValue(params, "sort", ["title", "release-date", "runtime"] as const, "release-date"),
+  };
+};
+
 export const parseCinemasPageSearchParams = async (searchParams: PageSearchParamsInput) => {
   const params = await resolvePageSearchParams(searchParams);
 

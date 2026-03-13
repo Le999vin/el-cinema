@@ -8,7 +8,7 @@ const ratingStepSchema = z
     message: "Rating must be in 0.5 increments",
   });
 
-export const regionSchema = z.literal("ZH");
+export const regionSchema = z.string().min(1).max(100);
 
 export const cinemaSchema = z.object({
   id: z.string().uuid(),
@@ -23,6 +23,13 @@ export const cinemaSchema = z.object({
   websiteUrl: z.string().url().nullable().optional(),
   phoneNumber: z.string().nullable().optional(),
   chain: z.string().nullable().optional(),
+  rating: z.number().min(0).max(5).nullable().optional(),
+  googleMapsUri: z.string().url().nullable().optional(),
+  openingHours: z.array(z.string()).default([]),
+  editorialSummary: z.string().nullable().optional(),
+  types: z.array(z.string()).default([]),
+  sourceUpdatedAt: z.date().nullable().optional(),
+  detailsSourceUpdatedAt: z.date().nullable().optional(),
   createdAt: z.date(),
   updatedAt: z.date(),
 });
@@ -32,8 +39,12 @@ export const cinemaSummarySchema = z.object({
   name: z.string().min(1),
   address: z.string().min(1),
   city: z.string().min(1),
+  region: regionSchema,
   district: z.string().nullable().optional(),
   websiteUrl: z.string().url().nullable().optional(),
+  rating: z.number().min(0).max(5).nullable().optional(),
+  googleMapsUri: z.string().url().nullable().optional(),
+  types: z.array(z.string()).default([]),
   movieCount: z.number().int().nonnegative(),
   showtimeCount: z.number().int().nonnegative(),
 });
@@ -216,4 +227,3 @@ export const recommendationWeightsSchema = z.object({
   watchlistWeight: z.number().nonnegative(),
   freshnessWeight: z.number().nonnegative(),
 });
-

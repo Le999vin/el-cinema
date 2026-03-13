@@ -68,14 +68,20 @@ export const cinemas = pgTable(
     name: text("name").notNull(),
     address: text("address").notNull(),
     city: text("city").notNull(),
-    region: varchar("region", { length: 10 }).notNull().default("ZH"),
+    region: varchar("region", { length: 100 }).notNull().default("ZH"),
     district: text("district"),
     lat: numeric("lat", { precision: 10, scale: 7 }).notNull(),
     lng: numeric("lng", { precision: 10, scale: 7 }).notNull(),
     websiteUrl: text("website_url"),
     phoneNumber: text("phone_number"),
     chain: text("chain"),
+    rating: numeric("rating", { precision: 2, scale: 1 }),
+    googleMapsUri: text("google_maps_uri"),
+    openingHours: jsonb("opening_hours").$type<string[]>().notNull().default([]),
+    editorialSummary: text("editorial_summary"),
+    types: jsonb("types").$type<string[]>().notNull().default([]),
     sourceUpdatedAt: timestamp("source_updated_at", { withTimezone: true }),
+    detailsSourceUpdatedAt: timestamp("details_source_updated_at", { withTimezone: true }),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   },
@@ -104,6 +110,28 @@ export const movies = pgTable(
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (table) => [uniqueIndex("movies_tmdb_id_unique").on(table.tmdbId), index("movies_title_idx").on(table.title)],
+);
+
+export const series = pgTable(
+  "series",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    tmdbId: integer("tmdb_id").notNull(),
+    name: text("name").notNull(),
+    overview: text("overview").notNull(),
+    genres: jsonb("genres").$type<string[]>().notNull().default([]),
+    episodeRuntimeMinutes: integer("episode_runtime_minutes"),
+    posterUrl: text("poster_url"),
+    backdropUrl: text("backdrop_url"),
+    firstAirDate: varchar("first_air_date", { length: 20 }),
+    voteAverage: numeric("vote_average", { precision: 3, scale: 1 }),
+    numberOfSeasons: integer("number_of_seasons"),
+    numberOfEpisodes: integer("number_of_episodes"),
+    sourceUpdatedAt: timestamp("source_updated_at", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [uniqueIndex("series_tmdb_id_unique").on(table.tmdbId), index("series_name_idx").on(table.name)],
 );
 
 export const showtimes = pgTable(
@@ -262,4 +290,3 @@ export const showtimeRelations = relations(showtimes, ({ one }) => ({
     references: [movies.id],
   }),
 }));
-

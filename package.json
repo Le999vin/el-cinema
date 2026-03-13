@@ -15,7 +15,9 @@
     "db:studio": "drizzle-kit studio",
     "db:seed": "tsx src/scripts/seed.ts",
     "sync:cinemas": "tsx src/scripts/sync-cinemas.ts",
-    "sync:movies": "tsx src/scripts/sync-movies.ts"
+    "sync:movies": "tsx src/scripts/sync-movies.ts",
+    "sync:series": "tsx src/scripts/sync-series.ts",
+    "sync:catalog": "tsx src/scripts/sync-catalog.ts"
   },
   "dependencies": {
     "bcryptjs": "^3.0.3",

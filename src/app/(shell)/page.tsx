@@ -45,7 +45,7 @@ export default async function HomePage() {
 
       <section className="grid gap-4 md:grid-cols-3">
         <Card>
-          <p className="text-sm text-[color:var(--text-muted)]">Cinemas in Zurich</p>
+          <p className="text-sm text-[color:var(--text-muted)]">Cinemas indexed in Switzerland</p>
           <p className="mt-2 text-4xl font-semibold">{popularCinemas.length}</p>
         </Card>
         <Card>
@@ -115,4 +115,3 @@ export default async function HomePage() {
     </div>
   );
 }
-

@@ -29,6 +29,7 @@ export const NAV_ITEMS = [
   { href: "/", label: "Home" },
   { href: "/cinemas", label: "Cinemas" },
   { href: "/movies", label: "Movies" },
+  { href: "/series", label: "Series" },
   { href: "/showtimes", label: "Showtimes" },
   { href: "/recommendations", label: "Recommendations" },
   { href: "/dashboard", label: "Dashboard" },
@@ -42,4 +43,3 @@ export const LOWER_NAV_ITEMS = [
 
 export const SESSION_COOKIE_NAME = "cinemascope_session";
 export const SESSION_DURATION_DAYS = 14;
-

@@ -10,14 +10,16 @@ import { Card } from "@/components/ui/card";
 import { getMovieDetails } from "@/features/movies/get-movies";
 import { getRecommendationsForUser } from "@/features/recommendations/get-recommendations";
 import { hasDatabase } from "@/lib/env";
+import { resolvePageRouteParams, type PageRouteParamsInput } from "@/lib/page-route-params";
 import { resolveCurrentUser } from "@/services/auth/auth-service";
 import { getUserProfile } from "@/services/db/repositories/user-repository";
 
-export default async function MovieDetailPage({ params }: { params: { movieId: string } }) {
+export default async function MovieDetailPage({ params }: { params: PageRouteParamsInput<{ movieId: string }> }) {
+  const { movieId } = await resolvePageRouteParams(params);
   const user = await resolveCurrentUser();
   const profile = user && hasDatabase ? await getUserProfile(user.id) : null;
 
-  const details = await getMovieDetails(params.movieId, {
+  const details = await getMovieDetails(movieId, {
     watchlistMovieIds: profile?.watchlistMovieIds,
     seenMovieIds: profile?.seenMovieIds,
     ratings: profile?.ratings,
@@ -107,4 +109,3 @@ export default async function MovieDetailPage({ params }: { params: { movieId: s
     </div>
   );
 }
-

@@ -1,7 +1,6 @@
 import { CinemaGridWithMap } from "@/components/cinemas/cinema-grid-with-map";
 import { Card } from "@/components/ui/card";
-import { getCinemas } from "@/features/cinemas/get-cinemas";
-import { loadCinemasCatalog } from "@/features/catalog/load-catalog";
+import { getCinemasPageData } from "@/features/cinemas/get-cinemas";
 import { parseCinemasPageSearchParams, type PageSearchParamsInput } from "@/lib/page-search-params";
 
 interface CinemasPageProps {
@@ -10,11 +9,7 @@ interface CinemasPageProps {
 
 export default async function CinemasPage({ searchParams }: CinemasPageProps) {
   const { search, sort } = await parseCinemasPageSearchParams(searchParams);
-
-  const [summaries, mapCinemas] = await Promise.all([
-    getCinemas({ search, sort }),
-    loadCinemasCatalog(),
-  ]);
+  const { summaries, mapCinemas } = await getCinemasPageData({ search, sort });
 
   return (
     <div className="space-y-6">
@@ -23,7 +18,7 @@ export default async function CinemasPage({ searchParams }: CinemasPageProps) {
           <input
             name="search"
             defaultValue={search}
-            placeholder="Search by name, district, or address"
+            placeholder="Search Swiss cinemas by name, city, district, or address"
             className="h-11 rounded-xl border border-[color:var(--border-subtle)] bg-[color:var(--panel-soft)] px-4 text-sm"
           />
           <select

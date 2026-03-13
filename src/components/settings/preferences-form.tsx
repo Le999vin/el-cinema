@@ -1,9 +1,10 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState, useTransition } from "react";
+import { useMemo, useState, useTransition } from "react";
 
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { MOVIE_GENRES } from "@/lib/constants";
 
 interface PreferencesFormProps {
@@ -21,7 +22,16 @@ export const PreferencesForm = ({ initial, cinemas }: PreferencesFormProps) => {
   const [isPending, startTransition] = useTransition();
   const [genres, setGenres] = useState<string[]>(initial.favouriteGenres);
   const [preferredCinemaIds, setPreferredCinemaIds] = useState<string[]>(initial.preferredCinemaIds);
+  const [cinemaFilter, setCinemaFilter] = useState("");
   const [message, setMessage] = useState<string | null>(null);
+  const visibleCinemas = useMemo(() => {
+    const normalized = cinemaFilter.trim().toLowerCase();
+    if (!normalized) {
+      return cinemas;
+    }
+
+    return cinemas.filter((cinema) => cinema.name.toLowerCase().includes(normalized));
+  }, [cinemaFilter, cinemas]);
 
   return (
     <form
@@ -102,8 +112,15 @@ export const PreferencesForm = ({ initial, cinemas }: PreferencesFormProps) => {
 
       <div>
         <p className="text-sm text-[color:var(--text-secondary)]">Preferred cinemas</p>
+        <div className="mt-2">
+          <Input
+            value={cinemaFilter}
+            onChange={(event) => setCinemaFilter(event.target.value)}
+            placeholder="Filter cinemas by name"
+          />
+        </div>
         <div className="mt-2 grid gap-2 sm:grid-cols-2">
-          {cinemas.map((cinema) => {
+          {visibleCinemas.map((cinema) => {
             const selected = preferredCinemaIds.includes(cinema.id);
             return (
               <button
@@ -136,4 +153,3 @@ export const PreferencesForm = ({ initial, cinemas }: PreferencesFormProps) => {
     </form>
   );
 };
-

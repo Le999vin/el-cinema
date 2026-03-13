@@ -1,6 +1,7 @@
-export type RegionCode = "ZH";
+export type RegionCode = string;
 
 export type UserRole = "user" | "admin";
+export type CatalogMediaType = "movie" | "tv";
 
 export type Genre =
   | "Action"
@@ -36,6 +37,13 @@ export interface Cinema {
   websiteUrl?: string | null;
   phoneNumber?: string | null;
   chain?: string | null;
+  rating?: number | null;
+  googleMapsUri?: string | null;
+  openingHours?: string[];
+  editorialSummary?: string | null;
+  types: string[];
+  sourceUpdatedAt?: Date | null;
+  detailsSourceUpdatedAt?: Date | null;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -45,8 +53,12 @@ export interface CinemaSummary {
   name: string;
   address: string;
   city: string;
+  region: RegionCode;
   district?: string | null;
   websiteUrl?: string | null;
+  rating?: number | null;
+  googleMapsUri?: string | null;
+  types: string[];
   movieCount: number;
   showtimeCount: number;
 }
@@ -68,6 +80,7 @@ export interface Movie {
   backdropUrl?: string | null;
   releaseDate?: string | null;
   voteAverage?: number | null;
+  sourceUpdatedAt?: Date | null;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -89,6 +102,36 @@ export interface MovieDetails extends Movie {
   onWatchlist?: boolean;
   seen?: boolean;
 }
+
+export interface Series {
+  id: string;
+  tmdbId: number;
+  name: string;
+  overview: string;
+  genres: Genre[];
+  episodeRuntimeMinutes?: number | null;
+  posterUrl?: string | null;
+  backdropUrl?: string | null;
+  firstAirDate?: string | null;
+  voteAverage?: number | null;
+  numberOfSeasons?: number | null;
+  numberOfEpisodes?: number | null;
+  sourceUpdatedAt?: Date | null;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface SeriesSummary {
+  id: string;
+  tmdbId: number;
+  name: string;
+  genres: Genre[];
+  posterUrl?: string | null;
+  firstAirDate?: string | null;
+  episodeRuntimeMinutes?: number | null;
+}
+
+export type SeriesDetails = Series;
 
 export interface Showtime {
   id: string;
@@ -221,4 +264,3 @@ export interface RecommendationWeights {
   watchlistWeight: number;
   freshnessWeight: number;
 }
-

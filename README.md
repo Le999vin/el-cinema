@@ -16,8 +16,8 @@ Zurich gives a dense, realistic cinema market with diverse venue types (arthouse
 
 ## Data Sources
 
-- **Google Places API**: Zurich cinema discovery + details.
-- **TMDb API**: movie metadata (title, overview, genres, runtime, release date, posters).
+- **Google Places API (New)**: Swiss cinema discovery, DB sync, and on-demand place detail enrichment.
+- **TMDb API**: movie and series metadata (title, overview, genres, runtime, release date, posters).
 - **Internal showtime database**: app-owned MVP showtimes (manual/admin + dev seed).
 
 No external live showtime API is used for MVP.
@@ -44,7 +44,7 @@ npm install
 2. Configure environment
 
 ```bash
-cp .env.example .env.local
+# create .env.local and provide the required values
 ```
 
 3. Generate and apply database migrations
@@ -60,12 +60,26 @@ npm run db:migrate
 npm run db:seed
 ```
 
-If `TMDB_API_KEY` is configured, `db:seed` also imports a broader TMDb-backed movie catalog into Postgres while preserving the demo showtime movies.
+If `TMDB_API_KEY` is configured, `db:seed` also imports broader TMDb-backed movie and series catalogs into Postgres while preserving the demo showtime movies.
+If `GOOGLE_PLACES_API_KEY` is configured, `db:seed` also runs the Swiss cinema discovery sync and stores the results in Postgres.
 
-Refresh the movie catalog later with:
+Refresh the catalog later with:
+
+```bash
+npm run sync:catalog
+```
+
+Movie-only and series-only syncs are also available:
 
 ```bash
 npm run sync:movies
+npm run sync:series
+```
+
+Cinema-only Swiss sync is also available:
+
+```bash
+npm run sync:cinemas
 ```
 
 5. Start the app
@@ -148,7 +162,7 @@ Configurable predicates/scorers are closure-based and reused across pages/APIs.
 
 ## Core Product Flows
 
-- Browse cinemas, movies, and showtimes for Zurich.
+- Browse DB-backed cinemas across Switzerland, plus movies, series, and showtimes.
 - Register/login/logout with secure own-auth.
 - Manage watchlist, seen movies, ratings, notes, favourite cinemas, preferences.
 - Receive private personalised recommendations with reasons.
@@ -188,11 +202,11 @@ npm run build
 - Recommendation quality depends on early user rating density.
 - External sync cadence is manual/triggered, not scheduled by default.
 - Admin tools are intentionally minimal and focused on showtime ownership.
-- Fallback mode uses curated dev catalog when API keys are absent.
+- Fallback mode uses curated dev movies when API keys are absent; series remain DB/TMDb-backed.
 
 ## Future Expansion
 
-- Extend region model from Zurich (`ZH`) to all Swiss cantons.
+- Improve Swiss cinema discovery coverage beyond the current metro/city area set.
 - Add production scheduler for periodic Google/TMDb refresh.
 - Integrate live showtime feeds once data quality/reliability is acceptable.
 - Add richer map intelligence (distance/time-to-cinema).

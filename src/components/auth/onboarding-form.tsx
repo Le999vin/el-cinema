@@ -15,6 +15,7 @@ export const OnboardingForm = ({ cinemaOptions }: OnboardingFormProps) => {
   const router = useRouter();
   const [selectedGenres, setSelectedGenres] = useState<string[]>([]);
   const [selectedCinemas, setSelectedCinemas] = useState<string[]>([]);
+  const [cinemaFilter, setCinemaFilter] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
@@ -22,6 +23,14 @@ export const OnboardingForm = ({ cinemaOptions }: OnboardingFormProps) => {
     () => [MOVIE_GENRES.slice(0, 9), MOVIE_GENRES.slice(9)],
     [],
   );
+  const visibleCinemaOptions = useMemo(() => {
+    const normalized = cinemaFilter.trim().toLowerCase();
+    if (!normalized) {
+      return cinemaOptions;
+    }
+
+    return cinemaOptions.filter((cinema) => cinema.name.toLowerCase().includes(normalized));
+  }, [cinemaFilter, cinemaOptions]);
 
   return (
     <form
@@ -104,8 +113,13 @@ export const OnboardingForm = ({ cinemaOptions }: OnboardingFormProps) => {
 
       <div className="space-y-3">
         <p className="text-sm text-[color:var(--text-secondary)]">Preferred cinemas</p>
+        <Input
+          value={cinemaFilter}
+          onChange={(event) => setCinemaFilter(event.target.value)}
+          placeholder="Filter cinemas by name"
+        />
         <div className="grid gap-2">
-          {cinemaOptions.map((cinema) => {
+          {visibleCinemaOptions.map((cinema) => {
             const selected = selectedCinemas.includes(cinema.id);
             return (
               <button
@@ -137,4 +151,3 @@ export const OnboardingForm = ({ cinemaOptions }: OnboardingFormProps) => {
     </form>
   );
 };
-

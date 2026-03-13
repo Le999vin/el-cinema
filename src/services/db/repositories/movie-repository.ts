@@ -1,15 +1,64 @@
-import { asc, eq, sql } from "drizzle-orm";
+import { and, asc, eq, sql } from "drizzle-orm";
+import type { SQL } from "drizzle-orm";
 
 import type { Movie } from "@/domain/types";
 import { getDb } from "@/services/db/client";
 import { movies } from "@/services/db/schema";
 import { mapMovie } from "@/services/db/repositories/mappers";
 
-type MovieUpsertInput = Pick<
+export type MovieUpsertInput = Pick<
   Movie,
   "tmdbId" | "title" | "overview" | "genres" | "runtimeMinutes" | "posterUrl" | "backdropUrl" | "releaseDate" | "voteAverage"
 > &
   Partial<Pick<Movie, "id">>;
+
+export interface MovieListQuery {
+  search?: string;
+  genres?: string[];
+  sort?: "title" | "release-date" | "runtime";
+  limit?: number;
+}
+
+const buildMovieSearchCondition = (query: string): SQL | undefined => {
+  const trimmed = query.trim();
+  if (!trimmed) {
+    return undefined;
+  }
+
+  const pattern = `%${trimmed}%`;
+  const normalizedPattern = `%${trimmed.toLowerCase()}%`;
+
+  return sql`(
+    ${movies.title} ilike ${pattern}
+    or ${movies.overview} ilike ${pattern}
+    or exists (
+      select 1
+      from jsonb_array_elements_text(${movies.genres}) as genre(value)
+      where lower(genre.value) like ${normalizedPattern}
+    )
+  )`;
+};
+
+const buildMovieGenreCondition = (genresInput: readonly string[]): SQL | undefined => {
+  if (!genresInput.length) {
+    return undefined;
+  }
+
+  const clauses = genresInput.map((genre) => sql`${movies.genres} @> ${JSON.stringify([genre])}::jsonb`);
+  return clauses.length === 1 ? clauses[0] : sql`(${sql.join(clauses, sql` or `)})`;
+};
+
+const buildMovieOrder = (mode: NonNullable<MovieListQuery["sort"]>) => {
+  if (mode === "release-date") {
+    return [sql`${movies.releaseDate} desc nulls last`, asc(movies.title)] as const;
+  }
+
+  if (mode === "runtime") {
+    return [sql`${movies.runtimeMinutes} desc nulls last`, asc(movies.title)] as const;
+  }
+
+  return [asc(movies.title)] as const;
+};
 
 export const listMovies = async (): Promise<Movie[]> => {
   const db = getDb();
@@ -17,15 +66,30 @@ export const listMovies = async (): Promise<Movie[]> => {
   return rows.map(mapMovie);
 };
 
-export const searchMovies = async (query: string): Promise<Movie[]> => {
+export const queryMovies = async (query: MovieListQuery = {}): Promise<Movie[]> => {
   const db = getDb();
-  const rows = await db
-    .select()
-    .from(movies)
-    .where(sql`${movies.title} ilike ${`%${query}%`} or ${movies.overview} ilike ${`%${query}%`}`)
-    .orderBy(asc(movies.title));
+  const conditions = [buildMovieSearchCondition(query.search ?? ""), buildMovieGenreCondition(query.genres ?? [])].filter(
+    (condition): condition is SQL => Boolean(condition),
+  );
 
+  let statement = db.select().from(movies).$dynamic();
+
+  if (conditions.length) {
+    statement = statement.where(and(...conditions));
+  }
+
+  statement = statement.orderBy(...buildMovieOrder(query.sort ?? "title"));
+
+  if (query.limit) {
+    statement = statement.limit(query.limit);
+  }
+
+  const rows = await statement;
   return rows.map(mapMovie);
+};
+
+export const searchMovies = async (query: string): Promise<Movie[]> => {
+  return queryMovies({ search: query, sort: "title" });
 };
 
 export const getMovieById = async (movieId: string): Promise<Movie | null> => {

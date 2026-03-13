@@ -8,8 +8,9 @@ import { Badge } from "@/components/ui/badge";
 
 const pageMeta: Record<string, { title: string; subtitle: string }> = {
   "/": { title: "Home", subtitle: "Tonight's best cinema options in Zurich" },
-  "/cinemas": { title: "Cinemas", subtitle: "Premium venues and independent gems" },
+  "/cinemas": { title: "Cinemas", subtitle: "Swiss cinema venues indexed from the local catalog" },
   "/movies": { title: "Movies", subtitle: "Discover what is showing and what is next" },
+  "/series": { title: "Series", subtitle: "Track what is streaming and what to start next" },
   "/showtimes": { title: "Showtimes", subtitle: "Find the screening that fits your evening" },
   "/recommendations": { title: "Recommendations", subtitle: "Personal picks tuned to your taste" },
   "/dashboard": { title: "Dashboard", subtitle: "Your cinema profile, ratings, and habits" },
@@ -22,6 +23,9 @@ export const TopBar = ({ displayName }: { displayName?: string | null }) => {
   const pathname = usePathname();
   const router = useRouter();
   const searchParams = useSearchParams();
+  const searchTarget = pathname.startsWith("/series") ? "/series" : "/movies";
+  const searchPlaceholder = pathname.startsWith("/series") ? "Search series" : "Search movies or cinemas";
+  const locationBadge = pathname.startsWith("/cinemas") ? "Switzerland" : "Zurich";
 
   const meta = useMemo(() => {
     const exact = pageMeta[pathname];
@@ -30,11 +34,15 @@ export const TopBar = ({ displayName }: { displayName?: string | null }) => {
     }
 
     if (pathname.startsWith("/cinemas/")) {
-      return { title: "Cinema Details", subtitle: "Venue profile and showtimes" };
+      return { title: "Cinema Details", subtitle: "Swiss venue profile, map, and local showtimes" };
     }
 
     if (pathname.startsWith("/movies/")) {
       return { title: "Movie Details", subtitle: "Context, screenings, and actions" };
+    }
+
+    if (pathname.startsWith("/series/")) {
+      return { title: "Series Details", subtitle: "Overview, seasons, and discovery context" };
     }
 
     if (pathname.startsWith("/admin")) {
@@ -66,13 +74,13 @@ export const TopBar = ({ displayName }: { displayName?: string | null }) => {
               } else {
                 params.delete("search");
               }
-              router.push(`/movies?${params.toString()}`);
+              router.push(`${searchTarget}?${params.toString()}`);
             }}
             className="w-[280px]"
           >
-            <Input name="query" placeholder="Search movies or cinemas" />
+            <Input name="query" placeholder={searchPlaceholder} />
           </form>
-          <Badge>Zurich</Badge>
+          <Badge>{locationBadge}</Badge>
           <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[color:var(--panel-soft)] text-sm font-semibold text-[color:var(--accent)]">
             {(displayName ?? "U").slice(0, 1).toUpperCase()}
           </div>
@@ -81,4 +89,3 @@ export const TopBar = ({ displayName }: { displayName?: string | null }) => {
     </header>
   );
 };
-
