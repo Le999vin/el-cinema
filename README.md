@@ -60,6 +60,14 @@ npm run db:migrate
 npm run db:seed
 ```
 
+If `TMDB_API_KEY` is configured, `db:seed` also imports a broader TMDb-backed movie catalog into Postgres while preserving the demo showtime movies.
+
+Refresh the movie catalog later with:
+
+```bash
+npm run sync:movies
+```
+
 5. Start the app
 
 ```bash
@@ -189,4 +197,3 @@ npm run build
 - Integrate live showtime feeds once data quality/reliability is acceptable.
 - Add richer map intelligence (distance/time-to-cinema).
 - Expand recommendation features with collaborative signals.
-

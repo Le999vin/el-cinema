@@ -1,5 +1,3 @@
-import "server-only";
-
 import { and, asc, between, eq } from "drizzle-orm";
 
 import type { Showtime } from "@/domain/types";
@@ -118,4 +116,3 @@ export const bulkInsertShowtimes = async (
 
   return payload.length;
 };
-

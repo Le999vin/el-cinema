@@ -1,4 +1,4 @@
-import "dotenv/config";
+import "@/lib/load-env";
 
 import { syncMovies } from "@/services/external/sync";
 
@@ -10,4 +10,3 @@ syncMovies()
     console.error(error);
     process.exit(1);
   });
-

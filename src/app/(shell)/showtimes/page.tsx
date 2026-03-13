@@ -2,23 +2,14 @@ import { ShowtimesTable } from "@/components/showtimes/showtimes-table";
 import { Card } from "@/components/ui/card";
 import { loadCinemasCatalog, loadMoviesCatalog } from "@/features/catalog/load-catalog";
 import { getShowtimeRows } from "@/features/showtimes/get-showtimes";
+import { parseShowtimesPageSearchParams, type PageSearchParamsInput } from "@/lib/page-search-params";
 
 interface ShowtimesPageProps {
-  searchParams?: {
-    mode?: "today" | "tomorrow" | "week";
-    movieId?: string;
-    cinemaId?: string;
-    timeStart?: string;
-    timeEnd?: string;
-  };
+  searchParams?: PageSearchParamsInput;
 }
 
 export default async function ShowtimesPage({ searchParams }: ShowtimesPageProps) {
-  const mode = searchParams?.mode ?? "today";
-  const movieId = searchParams?.movieId ?? "";
-  const cinemaId = searchParams?.cinemaId ?? "";
-  const timeStart = searchParams?.timeStart ? Number(searchParams.timeStart) : undefined;
-  const timeEnd = searchParams?.timeEnd ? Number(searchParams.timeEnd) : undefined;
+  const { mode, movieId, cinemaId, timeStart, timeEnd } = await parseShowtimesPageSearchParams(searchParams);
 
   const [rows, cinemas, movies] = await Promise.all([
     getShowtimeRows({ mode, movieId: movieId || undefined, cinemaId: cinemaId || undefined, timeStart, timeEnd }),
@@ -80,4 +71,3 @@ export default async function ShowtimesPage({ searchParams }: ShowtimesPageProps
     </div>
   );
 }
-

@@ -1,5 +1,3 @@
-import "server-only";
-
 import { hasGooglePlaces, env } from "@/lib/env";
 import {
   normalizeGooglePlaceCinema,
@@ -47,4 +45,3 @@ export const fetchZurichCinemasFromGoogle = async () => {
 
   return cinemas;
 };
-

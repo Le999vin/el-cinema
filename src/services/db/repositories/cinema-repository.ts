@@ -1,11 +1,15 @@
-import "server-only";
-
 import { and, asc, eq, sql } from "drizzle-orm";
 
 import type { Cinema } from "@/domain/types";
 import { getDb } from "@/services/db/client";
 import { cinemas } from "@/services/db/schema";
 import { mapCinema } from "@/services/db/repositories/mappers";
+
+type CinemaUpsertInput = Pick<
+  Cinema,
+  "googlePlaceId" | "name" | "address" | "city" | "region" | "district" | "lat" | "lng" | "websiteUrl" | "phoneNumber" | "chain"
+> &
+  Partial<Pick<Cinema, "id">>;
 
 export const listCinemas = async (city?: string): Promise<Cinema[]> => {
   const db = getDb();
@@ -43,14 +47,7 @@ export const getCinemaById = async (cinemaId: string): Promise<Cinema | null> =>
   return row ? mapCinema(row) : null;
 };
 
-export const upsertCinemas = async (
-  payload: Array<
-    Pick<
-      Cinema,
-      "googlePlaceId" | "name" | "address" | "city" | "region" | "district" | "lat" | "lng" | "websiteUrl" | "phoneNumber" | "chain"
-    >
-  >,
-): Promise<number> => {
+export const upsertCinemas = async (payload: CinemaUpsertInput[]): Promise<number> => {
   if (!payload.length) {
     return 0;
   }
@@ -61,6 +58,7 @@ export const upsertCinemas = async (
     .insert(cinemas)
     .values(
       payload.map((cinema) => ({
+        id: cinema.id,
         googlePlaceId: cinema.googlePlaceId,
         name: cinema.name,
         address: cinema.address,
@@ -95,4 +93,3 @@ export const upsertCinemas = async (
 
   return payload.length;
 };
-

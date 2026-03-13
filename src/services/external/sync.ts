@@ -1,5 +1,3 @@
-import "server-only";
-
 import { demoCinemas, demoMovies } from "@/lib/dev-seed-data";
 import { hasDatabase, hasGooglePlaces, hasTmdb } from "@/lib/env";
 import { upsertCinemas } from "@/services/db/repositories/cinema-repository";
@@ -38,4 +36,3 @@ export const syncMovies = async () => {
     source: hasTmdb ? "tmdb" : "demo-fallback",
   };
 };
-

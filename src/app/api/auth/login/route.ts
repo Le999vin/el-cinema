@@ -1,5 +1,6 @@
 import { loginInputSchema } from "@/domain/schemas";
 import { jsonError, jsonOk } from "@/lib/http";
+import { getSafeAuthErrorMessage } from "@/services/auth/api-errors";
 import { getSessionCookiePayload, loginUser } from "@/services/auth/auth-service";
 
 export async function POST(request: Request) {
@@ -13,11 +14,6 @@ export async function POST(request: Request) {
 
     return response;
   } catch (error) {
-    if (error instanceof Error) {
-      return jsonError(error.message, 401);
-    }
-
-    return jsonError("Login failed.", 401);
+    return jsonError(getSafeAuthErrorMessage(error, "Login failed."), 401);
   }
 }
-

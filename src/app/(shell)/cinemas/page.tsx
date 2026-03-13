@@ -2,17 +2,14 @@ import { CinemaGridWithMap } from "@/components/cinemas/cinema-grid-with-map";
 import { Card } from "@/components/ui/card";
 import { getCinemas } from "@/features/cinemas/get-cinemas";
 import { loadCinemasCatalog } from "@/features/catalog/load-catalog";
+import { parseCinemasPageSearchParams, type PageSearchParamsInput } from "@/lib/page-search-params";
 
 interface CinemasPageProps {
-  searchParams?: {
-    search?: string;
-    sort?: "name" | "showtimes";
-  };
+  searchParams?: PageSearchParamsInput;
 }
 
 export default async function CinemasPage({ searchParams }: CinemasPageProps) {
-  const search = searchParams?.search ?? "";
-  const sort = searchParams?.sort ?? "name";
+  const { search, sort } = await parseCinemasPageSearchParams(searchParams);
 
   const [summaries, mapCinemas] = await Promise.all([
     getCinemas({ search, sort }),
@@ -44,4 +41,3 @@ export default async function CinemasPage({ searchParams }: CinemasPageProps) {
     </div>
   );
 }
-

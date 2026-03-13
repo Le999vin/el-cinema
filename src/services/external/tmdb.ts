@@ -1,9 +1,8 @@
-import "server-only";
-
 import { env, hasTmdb } from "@/lib/env";
 import { normalizeTmdbMovie, parseTmdbList, parseTmdbMovie } from "@/services/external/normalizers-tmdb";
 
 const BASE_URL = "https://api.themoviedb.org/3";
+const TMDB_DISCOVERY_PAGES = 3;
 
 const fetchTmdb = async (path: string): Promise<unknown> => {
   if (!env.TMDB_API_KEY) {
@@ -21,24 +20,24 @@ const fetchTmdb = async (path: string): Promise<unknown> => {
   return response.json();
 };
 
-export const discoverTmdbNowShowing = async () => {
+const discoverTmdbCollection = async (path: string, pages = TMDB_DISCOVERY_PAGES) => {
   if (!hasTmdb) {
     return [];
   }
 
-  const payload = await fetchTmdb("/movie/now_playing?language=en-US&page=1");
-  const parsed = parseTmdbList(payload);
-  return parsed.results.map(normalizeTmdbMovie);
+  const payloads = await Promise.all(
+    Array.from({ length: pages }, (_, index) => fetchTmdb(`${path}?language=en-US&page=${index + 1}`)),
+  );
+
+  return payloads.flatMap((payload) => parseTmdbList(payload).results.map(normalizeTmdbMovie));
+};
+
+export const discoverTmdbNowShowing = async () => {
+  return discoverTmdbCollection("/movie/now_playing");
 };
 
 export const discoverTmdbUpcoming = async () => {
-  if (!hasTmdb) {
-    return [];
-  }
-
-  const payload = await fetchTmdb("/movie/upcoming?language=en-US&page=1");
-  const parsed = parseTmdbList(payload);
-  return parsed.results.map(normalizeTmdbMovie);
+  return discoverTmdbCollection("/movie/upcoming");
 };
 
 export const searchTmdbMovies = async (query: string) => {
@@ -60,4 +59,3 @@ export const fetchTmdbMovieDetails = async (tmdbId: number) => {
   const parsed = parseTmdbMovie(payload);
   return normalizeTmdbMovie(parsed);
 };
-

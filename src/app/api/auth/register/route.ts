@@ -1,5 +1,6 @@
 import { registerInputSchema } from "@/domain/schemas";
 import { jsonCreated, jsonError } from "@/lib/http";
+import { getSafeAuthErrorMessage } from "@/services/auth/api-errors";
 import {
   getSessionCookiePayload,
   loginUser,
@@ -18,11 +19,6 @@ export async function POST(request: Request) {
 
     return response;
   } catch (error) {
-    if (error instanceof Error) {
-      return jsonError(error.message, 400);
-    }
-
-    return jsonError("Registration failed.", 400);
+    return jsonError(getSafeAuthErrorMessage(error, "Registration failed."), 400);
   }
 }
-

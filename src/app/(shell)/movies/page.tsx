@@ -2,19 +2,14 @@ import { MovieCard } from "@/components/movies/movie-card";
 import { Card } from "@/components/ui/card";
 import { getMovies } from "@/features/movies/get-movies";
 import { loadMoviesCatalog } from "@/features/catalog/load-catalog";
+import { parseMoviesPageSearchParams, type PageSearchParamsInput } from "@/lib/page-search-params";
 
 interface MoviesPageProps {
-  searchParams?: {
-    search?: string;
-    genre?: string;
-    sort?: "title" | "release-date" | "runtime";
-  };
+  searchParams?: PageSearchParamsInput;
 }
 
 export default async function MoviesPage({ searchParams }: MoviesPageProps) {
-  const search = searchParams?.search ?? "";
-  const genre = searchParams?.genre ?? "";
-  const sort = searchParams?.sort ?? "release-date";
+  const { search, genre, sort } = await parseMoviesPageSearchParams(searchParams);
 
   const [movies, catalog] = await Promise.all([
     getMovies({ search, genres: genre ? [genre] : [], sort }),
@@ -57,12 +52,17 @@ export default async function MoviesPage({ searchParams }: MoviesPageProps) {
         </form>
       </Card>
 
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-        {movies.map((movie) => (
-          <MovieCard key={movie.id} movie={movie} />
-        ))}
-      </div>
+      {movies.length ? (
+        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+          {movies.map((movie) => (
+            <MovieCard key={movie.id} movie={movie} />
+          ))}
+        </div>
+      ) : (
+        <Card>
+          <p className="text-sm text-[color:var(--text-muted)]">No movies match your current filters.</p>
+        </Card>
+      )}
     </div>
   );
 }
-

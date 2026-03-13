@@ -1,4 +1,7 @@
+import { loadAppEnv } from "@/lib/load-env";
 import { z } from "zod";
+
+loadAppEnv();
 
 const envSchema = z.object({
   NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
@@ -26,4 +29,3 @@ export const hasTmdb = Boolean(env.TMDB_API_KEY);
 
 export const isProduction = env.NODE_ENV === "production";
 export const isTest = env.NODE_ENV === "test";
-

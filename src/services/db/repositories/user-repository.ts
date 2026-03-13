@@ -1,5 +1,3 @@
-import "server-only";
-
 import { and, eq } from "drizzle-orm";
 
 import type { User, UserPreferences, UserProfile, UserRating } from "@/domain/types";
@@ -266,4 +264,3 @@ export const getUserProfile = async (userId: string): Promise<UserProfile | null
     ratings,
   };
 };
-
