@@ -1,7 +1,8 @@
 import type { Cinema, CinemaDetails, CinemaSummary } from "@/domain/types";
 import { loadCinemasCatalog, loadMoviesCatalog, loadShowtimesCatalog } from "@/features/catalog/load-catalog";
-import { ensureCinemaDetailsFresh } from "@/features/cinemas/enrich-cinemas";
+import { ensureCinemaDetailsFresh, ensureCinemaSearchResults } from "@/features/cinemas/enrich-cinemas";
 import { hasDatabase } from "@/lib/env";
+import { buildCinemaSearchHaystack, buildCinemaSearchVariants } from "@/lib/cinema-search";
 import { listCinemaActivity, queryCinemas } from "@/services/db/repositories/cinema-repository";
 
 export interface CinemaListQuery {
@@ -16,32 +17,35 @@ interface CinemaPageData {
 }
 
 const buildCinemaSearchMatcher = (search: string) => {
-  const normalized = search.trim().toLowerCase();
-  if (!normalized) {
+  const variants = buildCinemaSearchVariants(search);
+  if (!variants.length) {
     return () => true;
   }
 
-  return (cinema: Cinema) =>
-    [
+  return (cinema: Cinema) => {
+    const haystack = buildCinemaSearchHaystack(
       cinema.name,
       cinema.address,
       cinema.city,
       cinema.district ?? "",
       cinema.types.join(" "),
       cinema.chain ?? "",
-    ]
-      .join(" ")
-      .toLowerCase()
-      .includes(normalized);
+    );
+
+    return variants.some((variant) => haystack.includes(variant));
+  };
 };
 
 const buildCityMatcher = (city: string) => {
-  const normalized = city.trim().toLowerCase();
-  if (!normalized) {
+  const variants = buildCinemaSearchVariants(city);
+  if (!variants.length) {
     return () => true;
   }
 
-  return (cinema: Cinema) => cinema.city.toLowerCase() === normalized;
+  return (cinema: Cinema) => {
+    const cityVariants = new Set(buildCinemaSearchVariants(cinema.city));
+    return variants.some((variant) => cityVariants.has(variant));
+  };
 };
 
 const sortCinemaRows = (
@@ -119,7 +123,12 @@ const buildFallbackCinemaPageData = async (query: CinemaListQuery): Promise<Cine
 };
 
 const buildDbCinemaPageData = async (query: CinemaListQuery): Promise<CinemaPageData | null> => {
-  const cinemas = await queryCinemas({ search: query.search, city: query.city });
+  let cinemas = await queryCinemas({ search: query.search, city: query.city });
+
+  if (!cinemas.length && query.search?.trim()) {
+    await ensureCinemaSearchResults(query.search);
+    cinemas = await queryCinemas({ search: query.search, city: query.city });
+  }
 
   if (!cinemas.length) {
     const hasFilters = Boolean(query.search?.trim() || query.city?.trim());

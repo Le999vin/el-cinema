@@ -1,7 +1,8 @@
 import { and, asc, eq, inArray, sql } from "drizzle-orm";
-import type { SQL } from "drizzle-orm";
+import type { SQL, SQLWrapper } from "drizzle-orm";
 
 import type { Cinema } from "@/domain/types";
+import { buildCinemaSearchVariants } from "@/lib/cinema-search";
 import { getDb } from "@/services/db/client";
 import { cinemas, showtimes } from "@/services/db/schema";
 import { mapCinema } from "@/services/db/repositories/mappers";
@@ -39,34 +40,55 @@ export interface CinemaActivity {
   showtimeCount: number;
 }
 
+const ACCENT_FOLD_FROM = "àáâãäåçèéêëìíîïñòóôõöùúûüýÿ";
+const ACCENT_FOLD_TO = "aaaaaaceeeeiiiinooooouuuuyy";
+
+const escapeLikePattern = (value: string) => value.replaceAll("\\", "\\\\").replaceAll("%", "\\%").replaceAll("_", "\\_");
+
+const buildCinemaSearchExpressions = (value: SQLWrapper) => [
+  sql`lower(${value})`,
+  sql`translate(lower(${value}), ${ACCENT_FOLD_FROM}, ${ACCENT_FOLD_TO})`,
+  sql`replace(replace(replace(replace(lower(${value}), 'ä', 'ae'), 'ö', 'oe'), 'ü', 'ue'), 'ß', 'ss')`,
+];
+
+const buildLikeConditions = (value: SQLWrapper, variants: readonly string[]) =>
+  buildCinemaSearchExpressions(value).flatMap((expression) =>
+    variants.map((variant) => sql`${expression} like ${`%${escapeLikePattern(variant)}%`} escape '\\'`),
+  );
+
+const buildEqualityConditions = (value: SQLWrapper, variants: readonly string[]) =>
+  buildCinemaSearchExpressions(value).flatMap((expression) =>
+    variants.map((variant) => sql`${expression} = ${variant}`),
+  );
+
 const buildCinemaSearchCondition = (query: string): SQL | undefined => {
-  const trimmed = query.trim();
-  if (!trimmed) {
+  const variants = buildCinemaSearchVariants(query);
+  if (!variants.length) {
     return undefined;
   }
 
-  const normalizedPattern = `%${trimmed.toLowerCase()}%`;
-
-  return sql`(
-    lower(${cinemas.name}) like ${normalizedPattern}
-    or lower(${cinemas.address}) like ${normalizedPattern}
-    or lower(${cinemas.city}) like ${normalizedPattern}
-    or lower(coalesce(${cinemas.district}, '')) like ${normalizedPattern}
-    or exists (
+  const conditions = [
+    ...buildLikeConditions(cinemas.name, variants),
+    ...buildLikeConditions(cinemas.address, variants),
+    ...buildLikeConditions(cinemas.city, variants),
+    ...buildLikeConditions(sql`coalesce(${cinemas.district}, '')`, variants),
+    sql`exists (
       select 1
       from jsonb_array_elements_text(${cinemas.types}) as place_type(value)
-      where lower(place_type.value) like ${normalizedPattern}
-    )
-  )`;
+      where ${sql.join(buildLikeConditions(sql`place_type.value`, variants), sql` or `)}
+    )`,
+  ];
+
+  return sql`(${sql.join(conditions, sql` or `)})`;
 };
 
 const buildCinemaCityCondition = (city: string): SQL | undefined => {
-  const trimmed = city.trim();
-  if (!trimmed) {
+  const variants = buildCinemaSearchVariants(city);
+  if (!variants.length) {
     return undefined;
   }
 
-  return sql`lower(${cinemas.city}) = ${trimmed.toLowerCase()}`;
+  return sql`(${sql.join(buildEqualityConditions(cinemas.city, variants), sql` or `)})`;
 };
 
 export const listCinemas = async (): Promise<Cinema[]> => {

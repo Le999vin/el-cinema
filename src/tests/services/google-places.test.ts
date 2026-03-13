@@ -31,7 +31,11 @@ vi.mock("@/lib/swiss-discovery-areas", () => ({
   SWITZERLAND_DEFAULT_ZOOM: 8,
 }));
 
-import { fetchGoogleCinemaDetails, fetchSwissCinemasFromGoogle } from "@/services/external/google-places";
+import {
+  fetchGoogleCinemaDetails,
+  fetchSwissCinemasFromGoogle,
+  searchSwissCinemasByQuery,
+} from "@/services/external/google-places";
 
 const buildAddressComponents = (city: string, region: string) => [
   { longText: city, shortText: city, types: ["locality"] },
@@ -156,5 +160,49 @@ describe("google places cinema service", () => {
       types: ["movie_theater"],
     });
     expect(fetchMock).toHaveBeenCalledOnce();
+  });
+
+  it("uses a contextual Swiss movie theater query for zero-result cinema search enrichment", async () => {
+    const fetchMock = vi.fn().mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          places: [
+            {
+              id: "google-place-3",
+              displayName: { text: "Schloss Cinéma" },
+              formattedAddress: "Schönenbergstrasse 1, 8820 Wädenswil, Switzerland",
+              location: { latitude: 47.2293, longitude: 8.6682 },
+              addressComponents: buildAddressComponents("Wädenswil", "ZH"),
+              googleMapsUri: "https://maps.google.com/?cid=3",
+              rating: 4.4,
+              types: ["movie_theater"],
+            },
+          ],
+        }),
+      ),
+    );
+
+    vi.stubGlobal("fetch", fetchMock);
+
+    const result = await searchSwissCinemasByQuery("wädenswil");
+
+    expect(result).toHaveLength(1);
+    expect(result[0]).toMatchObject({
+      googlePlaceId: "google-place-3",
+      city: "Wädenswil",
+      region: "ZH",
+      name: "Schloss Cinéma",
+    });
+
+    const [url, requestInit] = fetchMock.mock.calls[0] as [string, RequestInit & { headers: Record<string, string> }];
+
+    expect(url).toContain("/places:searchText");
+    expect(requestInit.headers["X-Goog-FieldMask"]).toContain("places.id");
+    expect(JSON.parse(String(requestInit.body))).toMatchObject({
+      textQuery: "wädenswil movie theater Switzerland",
+      includedType: "movie_theater",
+      strictTypeFiltering: true,
+      regionCode: "CH",
+    });
   });
 });

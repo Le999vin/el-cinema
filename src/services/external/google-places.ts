@@ -13,6 +13,8 @@ const BASE_URL = "https://places.googleapis.com/v1";
 const DISCOVERY_PAGE_SIZE = 20;
 const DISCOVERY_MAX_PAGES = 2;
 const DISCOVERY_REVALIDATE_SECONDS = 60 * 60 * 6;
+const SEARCH_PAGE_SIZE = 5;
+const SEARCH_REVALIDATE_SECONDS = 60 * 60;
 const DETAIL_REVALIDATE_SECONDS = 60 * 60 * 24;
 const CH_REGION_CODE = "CH";
 
@@ -204,6 +206,45 @@ export const fetchSwissCinemasFromGoogle = async (): Promise<SwissCinemaDiscover
     deduped: deduped.size,
     failures,
   };
+};
+
+export const searchSwissCinemasByQuery = async (query: string) => {
+  const trimmed = query.trim();
+  if (!hasGooglePlaces || !trimmed) {
+    return [];
+  }
+
+  const payload = await fetchGooglePlaces("/places:searchText", {
+    method: "POST",
+    body: JSON.stringify({
+      textQuery: `${trimmed} movie theater Switzerland`,
+      languageCode: "en",
+      regionCode: CH_REGION_CODE,
+      pageSize: SEARCH_PAGE_SIZE,
+      includedType: "movie_theater",
+      strictTypeFiltering: true,
+    }),
+    fieldMask: DISCOVERY_FIELD_MASK,
+    revalidate: SEARCH_REVALIDATE_SECONDS,
+  });
+
+  const parsed = parseGooglePlacesSearchResponse(payload);
+  const deduped = new Map<string, ReturnType<typeof normalizeDiscoveredGooglePlaceCinema>>();
+
+  for (const place of parsed.places) {
+    if (!isSwissGooglePlace(place) || place.location?.latitude == null || place.location?.longitude == null) {
+      continue;
+    }
+
+    const normalized = normalizeDiscoveredGooglePlaceCinema(place, {
+      fallbackCity: trimmed,
+      fallbackRegion: CH_REGION_CODE,
+    });
+
+    deduped.set(normalized.googlePlaceId, normalized);
+  }
+
+  return [...deduped.values()];
 };
 
 export const fetchGoogleCinemaDetails = async (
