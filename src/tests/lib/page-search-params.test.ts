@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   parseCinemasPageSearchParams,
   parseMoviesPageSearchParams,
+  parseSearchPageSearchParams,
   parseSeriesPageSearchParams,
   parseShowtimesPageSearchParams,
   resolvePageSearchParams,
@@ -45,6 +46,7 @@ describe("page search params", () => {
     expect(params).toEqual({
       search: "",
       sort: "name",
+      view: "list",
     });
   });
 
@@ -79,6 +81,16 @@ describe("page search params", () => {
       cinemaId: "",
       timeStart: 18,
       timeEnd: 23,
+    });
+  });
+
+  it("parses global search query params", async () => {
+    const params = await parseSearchPageSearchParams({
+      query: ["arthouse", "ignored"],
+    });
+
+    expect(params).toEqual({
+      query: "arthouse",
     });
   });
 });

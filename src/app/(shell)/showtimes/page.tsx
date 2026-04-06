@@ -1,7 +1,9 @@
 import { ShowtimesTable } from "@/components/showtimes/showtimes-table";
 import { Card } from "@/components/ui/card";
+import { Select } from "@/components/ui/select";
 import { loadCinemasCatalog, loadMoviesCatalog } from "@/features/catalog/load-catalog";
 import { getShowtimeRows } from "@/features/showtimes/get-showtimes";
+import { HOUR_OPTIONS } from "@/lib/forms";
 import { parseShowtimesPageSearchParams, type PageSearchParamsInput } from "@/lib/page-search-params";
 
 interface ShowtimesPageProps {
@@ -19,51 +21,64 @@ export default async function ShowtimesPage({ searchParams }: ShowtimesPageProps
 
   return (
     <div className="space-y-6">
-      <Card>
+      <Card className="sticky top-[88px] z-10">
         <form className="grid gap-3 lg:grid-cols-[160px_1fr_1fr_130px_130px]" action="/showtimes" method="GET">
-          <select name="mode" defaultValue={mode} className="h-11 rounded-xl border border-[color:var(--border-subtle)] bg-[color:var(--panel-soft)] px-3 text-sm">
-            <option value="today">Today</option>
-            <option value="tomorrow">Tomorrow</option>
-            <option value="week">This Week</option>
-          </select>
+          <label className="space-y-2">
+            <span className="text-sm text-[color:var(--text-secondary)]">When</span>
+            <Select id="showtimes-mode" name="mode" defaultValue={mode}>
+              <option value="today">Today</option>
+              <option value="tomorrow">Tomorrow</option>
+              <option value="week">This week</option>
+            </Select>
+          </label>
 
-          <select name="movieId" defaultValue={movieId} className="h-11 rounded-xl border border-[color:var(--border-subtle)] bg-[color:var(--panel-soft)] px-3 text-sm">
-            <option value="">All movies</option>
-            {movies.map((movie) => (
-              <option key={movie.id} value={movie.id}>
-                {movie.title}
-              </option>
-            ))}
-          </select>
+          <label className="space-y-2">
+            <span className="text-sm text-[color:var(--text-secondary)]">Movie</span>
+            <Select id="showtimes-movie" name="movieId" defaultValue={movieId}>
+              <option value="">All movies</option>
+              {movies.map((movie) => (
+                <option key={movie.id} value={movie.id}>
+                  {movie.title}
+                </option>
+              ))}
+            </Select>
+          </label>
 
-          <select name="cinemaId" defaultValue={cinemaId} className="h-11 rounded-xl border border-[color:var(--border-subtle)] bg-[color:var(--panel-soft)] px-3 text-sm">
-            <option value="">All cinemas</option>
-            {cinemas.map((cinema) => (
-              <option key={cinema.id} value={cinema.id}>
-                {cinema.name}
-              </option>
-            ))}
-          </select>
+          <label className="space-y-2">
+            <span className="text-sm text-[color:var(--text-secondary)]">Cinema</span>
+            <Select id="showtimes-cinema" name="cinemaId" defaultValue={cinemaId}>
+              <option value="">All cinemas</option>
+              {cinemas.map((cinema) => (
+                <option key={cinema.id} value={cinema.id}>
+                  {cinema.name}
+                </option>
+              ))}
+            </Select>
+          </label>
 
-          <input
-            name="timeStart"
-            type="number"
-            min={0}
-            max={23}
-            placeholder="From"
-            defaultValue={timeStart}
-            className="h-11 rounded-xl border border-[color:var(--border-subtle)] bg-[color:var(--panel-soft)] px-3 text-sm"
-          />
+          <label className="space-y-2">
+            <span className="text-sm text-[color:var(--text-secondary)]">Start after</span>
+            <Select id="showtimes-start" name="timeStart" defaultValue={timeStart != null ? String(timeStart) : ""}>
+              <option value="">Any time</option>
+              {HOUR_OPTIONS.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </Select>
+          </label>
 
-          <input
-            name="timeEnd"
-            type="number"
-            min={0}
-            max={23}
-            placeholder="To"
-            defaultValue={timeEnd}
-            className="h-11 rounded-xl border border-[color:var(--border-subtle)] bg-[color:var(--panel-soft)] px-3 text-sm"
-          />
+          <label className="space-y-2">
+            <span className="text-sm text-[color:var(--text-secondary)]">Finish by</span>
+            <Select id="showtimes-end" name="timeEnd" defaultValue={timeEnd != null ? String(timeEnd) : ""}>
+              <option value="">Any time</option>
+              {HOUR_OPTIONS.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </Select>
+          </label>
         </form>
       </Card>
 

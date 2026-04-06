@@ -2,7 +2,10 @@ import Link from "next/link";
 
 export default function AuthLayout({ children }: { children: React.ReactNode }) {
   return (
-    <main className="relative min-h-screen overflow-hidden bg-[radial-gradient(circle_at_top,_rgba(209,159,68,0.18),_transparent_40%),_radial-gradient(circle_at_bottom,_rgba(89,54,12,0.35),_transparent_45%),_#0c0b0c]">
+    <main
+      id="main-content"
+      className="relative min-h-screen overflow-hidden bg-[radial-gradient(circle_at_top,_rgba(209,159,68,0.18),_transparent_40%),_radial-gradient(circle_at_bottom,_rgba(89,54,12,0.35),_transparent_45%),_#0c0b0c]"
+    >
       <div className="absolute inset-0 bg-[linear-gradient(120deg,_rgba(217,164,65,0.06),_transparent_30%)]" />
       <div className="relative mx-auto flex min-h-screen max-w-5xl items-center justify-center px-6 py-12">
         <section className="grid w-full overflow-hidden rounded-3xl border border-[color:var(--border-subtle)] bg-[color:var(--panel)] shadow-[0_30px_100px_rgba(0,0,0,0.45)] md:grid-cols-[1.2fr_1fr]">
@@ -23,4 +26,3 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
     </main>
   );
 }
-

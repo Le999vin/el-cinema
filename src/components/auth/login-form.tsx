@@ -5,6 +5,7 @@ import { useState, useTransition } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { focusFirstInvalidField } from "@/lib/forms";
 
 export const LoginForm = () => {
   const router = useRouter();
@@ -16,6 +17,10 @@ export const LoginForm = () => {
       className="space-y-5"
       onSubmit={(event) => {
         event.preventDefault();
+        if (!focusFirstInvalidField(event.currentTarget)) {
+          return;
+        }
+
         const formData = new FormData(event.currentTarget);
 
         startTransition(async () => {
@@ -46,16 +51,18 @@ export const LoginForm = () => {
       </div>
 
       <label className="block space-y-2">
-        <span className="text-sm text-[color:var(--text-secondary)]">Email</span>
-        <Input name="email" type="email" autoComplete="email" required />
+        <span className="text-sm text-[color:var(--text-secondary)]">Email address</span>
+        <Input id="login-email" name="email" type="email" autoComplete="email" required />
       </label>
 
       <label className="block space-y-2">
         <span className="text-sm text-[color:var(--text-secondary)]">Password</span>
-        <Input name="password" type="password" autoComplete="current-password" required />
+        <Input id="login-password" name="password" type="password" autoComplete="current-password" required />
       </label>
 
-      {error ? <p className="text-sm text-rose-300">{error}</p> : null}
+      <p aria-live="polite" className="text-sm text-rose-300">
+        {error ?? ""}
+      </p>
 
       <Button type="submit" className="w-full" disabled={isPending}>
         {isPending ? "Signing in..." : "Sign in"}
@@ -67,4 +74,3 @@ export const LoginForm = () => {
     </form>
   );
 };
-

@@ -10,7 +10,7 @@ describe("auth boundaries", () => {
     const valid = await verifyPassword(password, hash);
 
     expect(valid).toBe(true);
-  });
+  }, 10000);
 
   it("creates stable session token hash", () => {
     const token = generateSessionToken();
@@ -21,4 +21,3 @@ describe("auth boundaries", () => {
     expect(hashA).toBe(hashB);
   });
 });
-

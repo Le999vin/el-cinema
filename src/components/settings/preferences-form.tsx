@@ -5,7 +5,9 @@ import { useMemo, useState, useTransition } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Select } from "@/components/ui/select";
 import { MOVIE_GENRES } from "@/lib/constants";
+import { focusFirstInvalidField, HOUR_OPTIONS } from "@/lib/forms";
 
 interface PreferencesFormProps {
   initial: {
@@ -38,6 +40,10 @@ export const PreferencesForm = ({ initial, cinemas }: PreferencesFormProps) => {
       className="space-y-5"
       onSubmit={(event) => {
         event.preventDefault();
+        if (!focusFirstInvalidField(event.currentTarget)) {
+          return;
+        }
+
         const formData = new FormData(event.currentTarget);
 
         startTransition(async () => {
@@ -88,36 +94,45 @@ export const PreferencesForm = ({ initial, cinemas }: PreferencesFormProps) => {
       <div className="grid gap-4 md:grid-cols-2">
         <label className="space-y-1 text-sm text-[color:var(--text-secondary)]">
           <span>Preferred start hour</span>
-          <input
+          <Select
+            id="preferences-start-hour"
             name="start"
-            type="number"
-            min={0}
-            max={23}
-            defaultValue={initial.preferredTimeStart ?? 18}
-            className="h-10 w-full rounded-lg border border-[color:var(--border-subtle)] bg-[color:var(--panel-soft)] px-3"
-          />
+            defaultValue={String(initial.preferredTimeStart ?? 18)}
+            className="h-10 rounded-lg px-3"
+          >
+            {HOUR_OPTIONS.map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </Select>
         </label>
         <label className="space-y-1 text-sm text-[color:var(--text-secondary)]">
           <span>Preferred end hour</span>
-          <input
+          <Select
+            id="preferences-end-hour"
             name="end"
-            type="number"
-            min={0}
-            max={23}
-            defaultValue={initial.preferredTimeEnd ?? 23}
-            className="h-10 w-full rounded-lg border border-[color:var(--border-subtle)] bg-[color:var(--panel-soft)] px-3"
-          />
+            defaultValue={String(initial.preferredTimeEnd ?? 23)}
+            className="h-10 rounded-lg px-3"
+          >
+            {HOUR_OPTIONS.map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </Select>
         </label>
       </div>
 
       <div>
         <p className="text-sm text-[color:var(--text-secondary)]">Preferred cinemas</p>
-        <div className="mt-2">
-          <Input
-            value={cinemaFilter}
-            onChange={(event) => setCinemaFilter(event.target.value)}
-            placeholder="Filter cinemas by name"
-          />
+      <div className="mt-2">
+        <Input
+          id="preferences-cinema-filter"
+          value={cinemaFilter}
+          onChange={(event) => setCinemaFilter(event.target.value)}
+          placeholder="Filter cinemas by name"
+        />
         </div>
         <div className="mt-2 grid gap-2 sm:grid-cols-2">
           {visibleCinemas.map((cinema) => {
@@ -148,7 +163,9 @@ export const PreferencesForm = ({ initial, cinemas }: PreferencesFormProps) => {
         <Button type="submit" disabled={isPending}>
           {isPending ? "Saving..." : "Save preferences"}
         </Button>
-        {message ? <p className="text-xs text-[color:var(--text-muted)]">{message}</p> : null}
+        <p aria-live="polite" className="text-xs text-[color:var(--text-muted)]">
+          {message ?? ""}
+        </p>
       </div>
     </form>
   );

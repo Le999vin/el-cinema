@@ -5,6 +5,7 @@ import { useState, useTransition } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { focusFirstInvalidField } from "@/lib/forms";
 
 export const RegisterForm = () => {
   const router = useRouter();
@@ -16,12 +17,17 @@ export const RegisterForm = () => {
       className="space-y-5"
       onSubmit={(event) => {
         event.preventDefault();
+        if (!focusFirstInvalidField(event.currentTarget)) {
+          return;
+        }
+
         const formData = new FormData(event.currentTarget);
         const password = formData.get("password")?.toString() ?? "";
         const confirmPassword = formData.get("confirmPassword")?.toString() ?? "";
 
         if (password !== confirmPassword) {
           setError("Passwords do not match.");
+          event.currentTarget.querySelector<HTMLInputElement>("#register-confirm-password")?.focus();
           return;
         }
 
@@ -55,25 +61,34 @@ export const RegisterForm = () => {
 
       <label className="block space-y-2">
         <span className="text-sm text-[color:var(--text-secondary)]">Display name</span>
-        <Input name="displayName" autoComplete="name" required />
+        <Input id="register-display-name" name="displayName" autoComplete="name" required />
       </label>
 
       <label className="block space-y-2">
-        <span className="text-sm text-[color:var(--text-secondary)]">Email</span>
-        <Input name="email" type="email" autoComplete="email" required />
+        <span className="text-sm text-[color:var(--text-secondary)]">Email address</span>
+        <Input id="register-email" name="email" type="email" autoComplete="email" required />
       </label>
 
       <label className="block space-y-2">
         <span className="text-sm text-[color:var(--text-secondary)]">Password</span>
-        <Input name="password" type="password" autoComplete="new-password" required minLength={8} />
+        <Input id="register-password" name="password" type="password" autoComplete="new-password" required minLength={8} />
       </label>
 
       <label className="block space-y-2">
         <span className="text-sm text-[color:var(--text-secondary)]">Confirm password</span>
-        <Input name="confirmPassword" type="password" autoComplete="new-password" required minLength={8} />
+        <Input
+          id="register-confirm-password"
+          name="confirmPassword"
+          type="password"
+          autoComplete="new-password"
+          required
+          minLength={8}
+        />
       </label>
 
-      {error ? <p className="text-sm text-rose-300">{error}</p> : null}
+      <p aria-live="polite" className="text-sm text-rose-300">
+        {error ?? ""}
+      </p>
 
       <Button type="submit" className="w-full" disabled={isPending}>
         {isPending ? "Creating account..." : "Create account"}
@@ -85,4 +100,3 @@ export const RegisterForm = () => {
     </form>
   );
 };
-

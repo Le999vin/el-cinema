@@ -28,9 +28,11 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`${displayFont.variable} ${bodyFont.variable} bg-[color:var(--background)] font-[family-name:var(--font-body)] text-[color:var(--text-primary)] antialiased`}>
+        <a href="#main-content" className="skip-link">
+          Skip to main content
+        </a>
         {children}
       </body>
     </html>
   );
 }
-

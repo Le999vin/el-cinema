@@ -66,6 +66,7 @@ export const parseCinemasPageSearchParams = async (searchParams: PageSearchParam
   return {
     search: params.search ?? "",
     sort: pickEnumValue(params, "sort", ["name", "showtimes"] as const, "name"),
+    view: pickEnumValue(params, "view", ["list", "map"] as const, "list"),
   };
 };
 
@@ -78,5 +79,13 @@ export const parseShowtimesPageSearchParams = async (searchParams: PageSearchPar
     cinemaId: params.cinemaId ?? "",
     timeStart: pickOptionalNumber(params, "timeStart"),
     timeEnd: pickOptionalNumber(params, "timeEnd"),
+  };
+};
+
+export const parseSearchPageSearchParams = async (searchParams: PageSearchParamsInput) => {
+  const params = await resolvePageSearchParams(searchParams);
+
+  return {
+    query: params.query ?? "",
   };
 };

@@ -5,7 +5,9 @@ import { useMemo, useState, useTransition } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Select } from "@/components/ui/select";
 import { MOVIE_GENRES } from "@/lib/constants";
+import { focusFirstInvalidField, HOUR_OPTIONS } from "@/lib/forms";
 
 interface OnboardingFormProps {
   cinemaOptions: Array<{ id: string; name: string }>;
@@ -37,6 +39,10 @@ export const OnboardingForm = ({ cinemaOptions }: OnboardingFormProps) => {
       className="space-y-6"
       onSubmit={(event) => {
         event.preventDefault();
+        if (!focusFirstInvalidField(event.currentTarget)) {
+          return;
+        }
+
         const formData = new FormData(event.currentTarget);
 
         startTransition(async () => {
@@ -103,17 +109,30 @@ export const OnboardingForm = ({ cinemaOptions }: OnboardingFormProps) => {
       <div className="grid gap-4 sm:grid-cols-2">
         <label className="space-y-2">
           <span className="text-sm text-[color:var(--text-secondary)]">Preferred start hour</span>
-          <Input name="timeStart" type="number" min={0} max={23} defaultValue={18} />
+          <Select id="onboarding-time-start" name="timeStart" defaultValue="18">
+            {HOUR_OPTIONS.map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </Select>
         </label>
         <label className="space-y-2">
           <span className="text-sm text-[color:var(--text-secondary)]">Preferred end hour</span>
-          <Input name="timeEnd" type="number" min={0} max={23} defaultValue={23} />
+          <Select id="onboarding-time-end" name="timeEnd" defaultValue="23">
+            {HOUR_OPTIONS.map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </Select>
         </label>
       </div>
 
       <div className="space-y-3">
         <p className="text-sm text-[color:var(--text-secondary)]">Preferred cinemas</p>
         <Input
+          id="onboarding-cinema-filter"
           value={cinemaFilter}
           onChange={(event) => setCinemaFilter(event.target.value)}
           placeholder="Filter cinemas by name"
@@ -143,7 +162,9 @@ export const OnboardingForm = ({ cinemaOptions }: OnboardingFormProps) => {
         </div>
       </div>
 
-      {error ? <p className="text-sm text-rose-300">{error}</p> : null}
+      <p aria-live="polite" className="text-sm text-rose-300">
+        {error ?? ""}
+      </p>
 
       <Button type="submit" className="w-full" disabled={isPending}>
         {isPending ? "Saving..." : "Save preferences"}

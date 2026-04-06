@@ -4,7 +4,9 @@ import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 
 import { Button } from "@/components/ui/button";
+import { Select } from "@/components/ui/select";
 import type { UserRating } from "@/domain/types";
+import { focusFirstInvalidField } from "@/lib/forms";
 
 const fields = ["story", "tension", "acting", "visuals", "soundtrack", "overall"] as const;
 
@@ -29,6 +31,10 @@ export const RatingForm = ({ movieId, initial }: { movieId: string; initial?: Us
       className="space-y-4 rounded-2xl border border-[color:var(--border-subtle)] bg-[color:var(--panel-soft)] p-4"
       onSubmit={(event) => {
         event.preventDefault();
+        if (!focusFirstInvalidField(event.currentTarget)) {
+          return;
+        }
+
         const formData = new FormData(event.currentTarget);
 
         startTransition(async () => {
@@ -73,17 +79,18 @@ export const RatingForm = ({ movieId, initial }: { movieId: string; initial?: Us
         {fields.map((field) => (
           <label key={field} className="space-y-1 text-sm text-[color:var(--text-secondary)]">
             <span className="capitalize">{field}</span>
-            <select
+            <Select
+              id={`rating-${field}`}
               name={field}
               defaultValue={initial ? String(initial[field]) : String(defaultRatings[field])}
-              className="h-10 w-full rounded-lg border border-[color:var(--border-subtle)] bg-[color:var(--panel)] px-2"
+              className="h-10 rounded-lg bg-[color:var(--panel)] px-2"
             >
               {[0.5, 1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5].map((value) => (
                 <option key={value} value={value}>
                   {value.toFixed(1)}
                 </option>
               ))}
-            </select>
+            </Select>
           </label>
         ))}
       </div>
@@ -91,6 +98,7 @@ export const RatingForm = ({ movieId, initial }: { movieId: string; initial?: Us
       <label className="block space-y-1 text-sm text-[color:var(--text-secondary)]">
         <span>Optional note</span>
         <textarea
+          id="rating-note"
           name="note"
           defaultValue={initial?.note ?? ""}
           rows={3}
@@ -110,11 +118,17 @@ export const RatingForm = ({ movieId, initial }: { movieId: string; initial?: Us
             disabled={isPending}
             onClick={() => {
               startTransition(async () => {
-                await fetch("/api/user/ratings", {
+                const response = await fetch("/api/user/ratings", {
                   method: "DELETE",
                   headers: { "Content-Type": "application/json" },
                   body: JSON.stringify({ movieId }),
                 });
+
+                if (!response.ok) {
+                  setMessage("Could not remove rating.");
+                  return;
+                }
+
                 router.refresh();
                 setMessage("Rating removed.");
               });
@@ -125,8 +139,9 @@ export const RatingForm = ({ movieId, initial }: { movieId: string; initial?: Us
         ) : null}
       </div>
 
-      {message ? <p className="text-xs text-[color:var(--text-muted)]">{message}</p> : null}
+      <p aria-live="polite" className="text-xs text-[color:var(--text-muted)]">
+        {message ?? ""}
+      </p>
     </form>
   );
 };
-

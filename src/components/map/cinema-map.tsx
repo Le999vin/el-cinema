@@ -1,25 +1,44 @@
 "use client";
 
-import { useEffect, useMemo } from "react";
-import { MapContainer, Marker, Popup, TileLayer, useMap } from "react-leaflet";
+import { useEffect, useMemo, useRef } from "react";
 import L from "leaflet";
+import { MapContainer, Marker, Popup, TileLayer, useMap } from "react-leaflet";
 
 import type { Cinema } from "@/domain/types";
 import { SWITZERLAND_CENTER, SWITZERLAND_DEFAULT_ZOOM } from "@/lib/swiss-discovery-areas";
 
-const markerIcon = new L.Icon({
-  iconUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png",
-  iconRetinaUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png",
-  shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
-  iconSize: [25, 41],
-  iconAnchor: [12, 41],
-});
+const createMarker = (accent: string, halo: string) =>
+  L.divIcon({
+    className: "",
+    iconSize: [20, 20],
+    iconAnchor: [10, 10],
+    popupAnchor: [0, -10],
+    html: `<span style="display:block;width:20px;height:20px;border-radius:999px;background:${accent};border:2px solid #0b0a0b;box-shadow:0 0 0 8px ${halo};"></span>`,
+  });
 
-export const CinemaMap = ({ cinemas, height = 360 }: { cinemas: Cinema[]; height?: number }) => {
+const markerIcon = createMarker("#d4a24b", "rgba(212,162,75,0.18)");
+const activeMarkerIcon = createMarker("#f4efe5", "rgba(230,188,117,0.34)");
+
+export const CinemaMap = ({
+  cinemas,
+  height = 360,
+  selectedCinemaId,
+  onSelectCinema,
+}: {
+  cinemas: Cinema[];
+  height?: number;
+  selectedCinemaId?: string | null;
+  onSelectCinema?: (cinemaId: string) => void;
+}) => {
   const plottedCinemas = useMemo(
-    () => cinemas.filter((cinema) => Number.isFinite(cinema.lat) && Number.isFinite(cinema.lng) && (cinema.lat !== 0 || cinema.lng !== 0)),
+    () =>
+      cinemas.filter(
+        (cinema) =>
+          Number.isFinite(cinema.lat) && Number.isFinite(cinema.lng) && (cinema.lat !== 0 || cinema.lng !== 0),
+      ),
     [cinemas],
   );
+  const markerRefs = useRef<Record<string, L.Marker>>({});
 
   return (
     <div className="overflow-hidden rounded-2xl border border-[color:var(--border-subtle)]" style={{ height }}>
@@ -29,10 +48,29 @@ export const CinemaMap = ({ cinemas, height = 360 }: { cinemas: Cinema[]; height
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
 
-        <FitCinemaBounds cinemas={plottedCinemas} />
+        <SyncCinemaMap
+          cinemas={plottedCinemas}
+          selectedCinemaId={selectedCinemaId}
+          markerRefs={markerRefs}
+        />
 
         {plottedCinemas.map((cinema) => (
-          <Marker key={cinema.id} position={[cinema.lat, cinema.lng]} icon={markerIcon}>
+          <Marker
+            key={cinema.id}
+            ref={(marker) => {
+              if (marker) {
+                markerRefs.current[cinema.id] = marker;
+                return;
+              }
+
+              delete markerRefs.current[cinema.id];
+            }}
+            position={[cinema.lat, cinema.lng]}
+            icon={selectedCinemaId === cinema.id ? activeMarkerIcon : markerIcon}
+            eventHandlers={{
+              click: () => onSelectCinema?.(cinema.id),
+            }}
+          >
             <Popup>
               <div>
                 <p className="font-semibold">{cinema.name}</p>
@@ -46,10 +84,25 @@ export const CinemaMap = ({ cinemas, height = 360 }: { cinemas: Cinema[]; height
   );
 };
 
-const FitCinemaBounds = ({ cinemas }: { cinemas: Cinema[] }) => {
+const SyncCinemaMap = ({
+  cinemas,
+  selectedCinemaId,
+  markerRefs,
+}: {
+  cinemas: Cinema[];
+  selectedCinemaId?: string | null;
+  markerRefs: React.MutableRefObject<Record<string, L.Marker>>;
+}) => {
   const map = useMap();
 
   useEffect(() => {
+    const selectedCinema = cinemas.find((cinema) => cinema.id === selectedCinemaId);
+    if (selectedCinema) {
+      map.setView([selectedCinema.lat, selectedCinema.lng], 13);
+      markerRefs.current[selectedCinema.id]?.openPopup();
+      return;
+    }
+
     if (!cinemas.length) {
       map.setView(SWITZERLAND_CENTER, SWITZERLAND_DEFAULT_ZOOM);
       return;
@@ -64,7 +117,7 @@ const FitCinemaBounds = ({ cinemas }: { cinemas: Cinema[] }) => {
       L.latLngBounds(cinemas.map((cinema) => [cinema.lat, cinema.lng] as [number, number])),
       { padding: [36, 36] },
     );
-  }, [cinemas, map]);
+  }, [cinemas, map, markerRefs, selectedCinemaId]);
 
   return null;
 };

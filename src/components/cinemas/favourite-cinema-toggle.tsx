@@ -13,26 +13,39 @@ interface FavouriteCinemaToggleProps {
 export const FavouriteCinemaToggle = ({ cinemaId, initialFavourite }: FavouriteCinemaToggleProps) => {
   const router = useRouter();
   const [favourite, setFavourite] = useState(initialFavourite);
+  const [message, setMessage] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
   return (
-    <Button
-      variant={favourite ? "primary" : "secondary"}
-      disabled={isPending}
-      onClick={() => {
-        startTransition(async () => {
-          await fetch("/api/user/favourites", {
-            method: favourite ? "DELETE" : "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ cinemaId }),
+    <div className="space-y-2">
+      <Button
+        variant={favourite ? "primary" : "secondary"}
+        disabled={isPending}
+        onClick={() => {
+          startTransition(async () => {
+            setMessage(null);
+            const response = await fetch("/api/user/favourites", {
+              method: favourite ? "DELETE" : "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ cinemaId }),
+            });
+
+            if (!response.ok) {
+              setMessage("Could not update favourite cinemas.");
+              return;
+            }
+
+            setFavourite((current) => !current);
+            setMessage(favourite ? "Removed from favourites." : "Saved to your favourites.");
+            router.refresh();
           });
-          setFavourite((current) => !current);
-          router.refresh();
-        });
-      }}
-    >
-      {favourite ? "Remove favourite" : "Save favourite"}
-    </Button>
+        }}
+      >
+        {favourite ? "Remove favourite" : "Save favourite"}
+      </Button>
+      <p aria-live="polite" className="text-sm text-[color:var(--text-muted)]">
+        {message ?? ""}
+      </p>
+    </div>
   );
 };
-

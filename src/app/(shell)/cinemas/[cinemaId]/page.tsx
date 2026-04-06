@@ -1,5 +1,5 @@
-import Link from "next/link";
 import { format } from "date-fns";
+import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { FavouriteCinemaToggle } from "@/components/cinemas/favourite-cinema-toggle";
@@ -30,18 +30,21 @@ export default async function CinemaDetailPage({ params }: { params: PageRoutePa
 
   return (
     <div className="space-y-6">
-      <Card>
+      <Card className="bg-[linear-gradient(135deg,_rgba(212,162,75,0.16),_rgba(17,16,16,0.95))]">
         <div className="flex flex-wrap items-start justify-between gap-4">
-          <div>
-            <h2 className="font-[family-name:var(--font-display)] text-5xl text-[color:var(--text-primary)]">{details.name}</h2>
-            <p className="mt-2 text-[color:var(--text-secondary)]">{details.address}</p>
-            <div className="mt-4 flex flex-wrap gap-2">
+          <div className="max-w-3xl">
+            <div className="mb-4 flex flex-wrap gap-2">
               <Badge>{details.city}</Badge>
               <Badge>{details.region}</Badge>
               {details.district ? <Badge>{details.district}</Badge> : null}
               {details.rating != null ? <Badge>{details.rating.toFixed(1)} / 5</Badge> : null}
               {details.types.slice(0, 2).map((type) => <Badge key={type}>{type.replaceAll("_", " ")}</Badge>)}
             </div>
+            <h2 className="font-[family-name:var(--font-display)] text-5xl text-[color:var(--text-primary)]">{details.name}</h2>
+            <p className="mt-2 text-[color:var(--text-secondary)]">{details.address}</p>
+            {details.editorialSummary ? (
+              <p className="mt-4 text-sm leading-relaxed text-[color:var(--text-secondary)]">{details.editorialSummary}</p>
+            ) : null}
           </div>
 
           {user ? (
@@ -53,91 +56,112 @@ export default async function CinemaDetailPage({ params }: { params: PageRoutePa
           )}
         </div>
 
-        <div className="mt-5 grid gap-4 text-sm text-[color:var(--text-muted)] md:grid-cols-2">
-          <div>
-            <p className="text-xs uppercase tracking-[0.08em]">Website</p>
+        <div className="mt-6 grid gap-4 md:grid-cols-3">
+          <div className="rounded-2xl border border-[color:var(--border-subtle)] bg-black/10 px-4 py-3">
+            <p className="text-xs uppercase tracking-[0.12em] text-[color:var(--text-muted)]">Website</p>
             {details.websiteUrl ? (
-              <a href={details.websiteUrl} target="_blank" rel="noreferrer" className="text-[color:var(--accent-soft)]">
-                {details.websiteUrl}
+              <a href={details.websiteUrl} target="_blank" rel="noreferrer" className="mt-2 inline-flex text-sm text-[color:var(--accent-soft)]">
+                Visit website
               </a>
             ) : (
-              <p>-</p>
+              <p className="mt-2 text-sm text-[color:var(--text-muted)]">No website listed</p>
             )}
           </div>
-          <div>
-            <p className="text-xs uppercase tracking-[0.08em]">Phone</p>
-            <p>{details.phoneNumber ?? "-"}</p>
-          </div>
-          <div>
-            <p className="text-xs uppercase tracking-[0.08em]">Maps</p>
+          <div className="rounded-2xl border border-[color:var(--border-subtle)] bg-black/10 px-4 py-3">
+            <p className="text-xs uppercase tracking-[0.12em] text-[color:var(--text-muted)]">Maps</p>
             {details.googleMapsUri ? (
-              <a href={details.googleMapsUri} target="_blank" rel="noreferrer" className="text-[color:var(--accent-soft)]">
+              <a href={details.googleMapsUri} target="_blank" rel="noreferrer" className="mt-2 inline-flex text-sm text-[color:var(--accent-soft)]">
                 Open in Google Maps
               </a>
             ) : (
-              <p>-</p>
+              <p className="mt-2 text-sm text-[color:var(--text-muted)]">No map link available</p>
             )}
           </div>
-          <div>
-            <p className="text-xs uppercase tracking-[0.08em]">Place Types</p>
-            <p>{details.types.length ? details.types.slice(0, 4).map((type) => type.replaceAll("_", " ")).join(" • ") : "-"}</p>
+          <div className="rounded-2xl border border-[color:var(--border-subtle)] bg-black/10 px-4 py-3">
+            <p className="text-xs uppercase tracking-[0.12em] text-[color:var(--text-muted)]">Phone</p>
+            <p className="mt-2 text-sm text-[color:var(--text-secondary)]">{details.phoneNumber ?? "No phone number listed"}</p>
           </div>
         </div>
-
-        {details.editorialSummary ? (
-          <div className="mt-5 rounded-2xl border border-[color:var(--border-subtle)] bg-[color:var(--panel-soft)] px-4 py-3 text-sm text-[color:var(--text-secondary)]">
-            {details.editorialSummary}
-          </div>
-        ) : null}
-
-        {details.openingHours?.length ? (
-          <div className="mt-5">
-            <p className="text-xs uppercase tracking-[0.08em] text-[color:var(--text-muted)]">Opening Hours</p>
-            <div className="mt-2 grid gap-2 md:grid-cols-2">
-              {details.openingHours.map((entry) => (
-                <div
-                  key={entry}
-                  className="rounded-xl border border-[color:var(--border-subtle)] bg-[color:var(--panel-soft)] px-3 py-2 text-sm text-[color:var(--text-secondary)]"
-                >
-                  {entry}
-                </div>
-              ))}
-            </div>
-          </div>
-        ) : null}
       </Card>
 
       <Card>
-        <h3 className="mb-4 font-[family-name:var(--font-display)] text-3xl">Location</h3>
-        <CinemaMapShell cinemas={[details]} height={280} />
+        <div className="mb-4 flex items-center justify-between gap-4">
+          <div>
+            <h3 className="font-[family-name:var(--font-display)] text-3xl">Location</h3>
+            <p className="text-sm text-[color:var(--text-muted)]">Use the map to orient the venue before picking a screening.</p>
+          </div>
+          {details.googleMapsUri ? (
+            <a href={details.googleMapsUri} target="_blank" rel="noreferrer" className="text-sm text-[color:var(--accent-soft)]">
+              Open directions
+            </a>
+          ) : null}
+        </div>
+        <CinemaMapShell cinemas={[details]} height={320} />
       </Card>
+
+      {details.openingHours?.length ? (
+        <Card>
+          <h3 className="font-[family-name:var(--font-display)] text-3xl">Opening Hours</h3>
+          <div className="mt-4 grid gap-2 md:grid-cols-2">
+            {details.openingHours.map((entry) => (
+              <div
+                key={entry}
+                className="rounded-xl border border-[color:var(--border-subtle)] bg-[color:var(--panel-soft)] px-3 py-2 text-sm text-[color:var(--text-secondary)]"
+              >
+                {entry}
+              </div>
+            ))}
+          </div>
+        </Card>
+      ) : null}
 
       <section className="grid gap-6 lg:grid-cols-2">
         <Card>
           <h3 className="font-[family-name:var(--font-display)] text-3xl">Movies Showing Here</h3>
           <div className="mt-4 space-y-3">
-            {details.movies.map((movie) => (
-              <Link key={movie.id} href={`/movies/${movie.id}`} className="block rounded-xl border border-[color:var(--border-subtle)] px-4 py-3 hover:border-[color:var(--accent-soft)]">
-                <p className="text-[color:var(--text-primary)]">{movie.title}</p>
-                <p className="text-xs text-[color:var(--text-muted)]">{movie.genres.slice(0, 3).join(" • ")}</p>
-              </Link>
-            ))}
+            {details.movies.length ? (
+              details.movies.map((movie) => (
+                <Link
+                  key={movie.id}
+                  href={`/movies/${movie.id}`}
+                  className="block rounded-2xl border border-[color:var(--border-subtle)] px-4 py-3 hover:border-[color:var(--accent-soft)]"
+                >
+                  <p className="text-[color:var(--text-primary)]">{movie.title}</p>
+                  <p className="mt-1 text-xs text-[color:var(--text-muted)]">{movie.genres.slice(0, 3).join(" • ")}</p>
+                </Link>
+              ))
+            ) : (
+              <p className="text-sm text-[color:var(--text-muted)]">
+                No movies are currently linked to this venue. Browse the wider catalog while the next showtime batch is being prepared.
+              </p>
+            )}
           </div>
         </Card>
 
         <Card>
           <h3 className="font-[family-name:var(--font-display)] text-3xl">Upcoming Showtimes</h3>
           <div className="mt-4 space-y-3">
-            {details.showtimes.slice(0, 10).map((showtime) => (
-              <div key={showtime.id} className="rounded-xl border border-[color:var(--border-subtle)] px-4 py-3 text-sm text-[color:var(--text-secondary)]">
-                <p className="text-[color:var(--text-primary)]">{format(showtime.startsAt, "EEEE, dd MMM - HH:mm")}</p>
-                <p>
-                  {showtime.language}
-                  {showtime.subtitleLanguage ? ` • subs ${showtime.subtitleLanguage}` : ""}
-                  {showtime.room ? ` • ${showtime.room}` : ""}
-                </p>
-              </div>
-            ))}
+            {details.showtimes.length ? (
+              details.showtimes.slice(0, 10).map((showtime) => (
+                <div
+                  key={showtime.id}
+                  className="rounded-2xl border border-[color:var(--border-subtle)] bg-[color:var(--panel-soft)] px-4 py-3 text-sm text-[color:var(--text-secondary)]"
+                >
+                  <div className="flex flex-wrap items-start justify-between gap-3">
+                    <p className="text-[color:var(--text-primary)]">{format(showtime.startsAt, "EEEE, dd MMM - HH:mm")}</p>
+                    <p className="text-[color:var(--accent-soft)]">{showtime.room ?? "Room TBA"}</p>
+                  </div>
+                  <p className="mt-1">
+                    {showtime.language}
+                    {showtime.subtitleLanguage ? ` • subs ${showtime.subtitleLanguage}` : ""}
+                  </p>
+                </div>
+              ))
+            ) : (
+              <p className="text-sm text-[color:var(--text-muted)]">
+                There are no upcoming showtimes at this venue yet. Check back after the next sync or browse other Zurich cinemas.
+              </p>
+            )}
           </div>
         </Card>
       </section>

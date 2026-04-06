@@ -2,6 +2,7 @@ import { RecommendationCard } from "@/components/recommendations/recommendation-
 import { Card } from "@/components/ui/card";
 import { getRecommendationsForUser } from "@/features/recommendations/get-recommendations";
 import { requireUser } from "@/services/auth/auth-service";
+import Link from "next/link";
 
 export const dynamic = "force-dynamic";
 
@@ -28,6 +29,14 @@ export default async function RecommendationsPage() {
           <p className="text-sm text-[color:var(--text-muted)]">
             Not enough personalised signals yet. Add ratings or update preferences to unlock tailored picks.
           </p>
+          <div className="mt-3 flex flex-wrap gap-3 text-sm">
+            <Link href="/movies" className="text-[color:var(--accent-soft)]">
+              Browse movies
+            </Link>
+            <Link href="/settings" className="text-[color:var(--accent-soft)]">
+              Update settings
+            </Link>
+          </div>
         </Card>
       )}
 
@@ -53,4 +62,3 @@ export default async function RecommendationsPage() {
     </div>
   );
 }
-

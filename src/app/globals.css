@@ -2,9 +2,12 @@
 @import "leaflet/dist/leaflet.css";
 
 :root {
+  color-scheme: dark;
   --background: #0b0a0b;
+  --background-elevated: #141214;
   --sidebar: #111011;
   --panel: #151314;
+  --panel-strong: #1b1718;
   --panel-soft: #1d1a1b;
   --border-subtle: rgba(255, 245, 220, 0.11);
   --text-primary: #f4efe5;
@@ -25,13 +28,20 @@ body {
   min-height: 100%;
 }
 
+html {
+  scroll-behavior: smooth;
+}
+
 body {
   margin: 0;
   background:
-    radial-gradient(circle at 15% 0%, rgba(212, 162, 75, 0.08), transparent 35%),
-    radial-gradient(circle at 90% 20%, rgba(112, 74, 29, 0.15), transparent 45%),
+    radial-gradient(circle at 15% 0%, rgba(212, 162, 75, 0.1), transparent 32%),
+    radial-gradient(circle at 85% 14%, rgba(212, 162, 75, 0.07), transparent 28%),
+    radial-gradient(circle at 78% 24%, rgba(112, 74, 29, 0.18), transparent 42%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.01), transparent 26%),
     var(--background);
   color: var(--text-primary);
+  background-attachment: fixed;
 }
 
 a {
@@ -39,11 +49,100 @@ a {
   text-decoration: none;
 }
 
+a,
+button,
+input,
+select,
+textarea,
+[role="button"] {
+  transition:
+    border-color 180ms ease,
+    background-color 180ms ease,
+    color 180ms ease,
+    opacity 180ms ease,
+    box-shadow 220ms ease,
+    transform 220ms ease;
+}
+
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+[role="button"]:focus-visible {
+  outline: 2px solid var(--accent-soft);
+  outline-offset: 3px;
+}
+
 ::selection {
   background: rgba(212, 162, 75, 0.3);
+}
+
+::-webkit-scrollbar {
+  width: 11px;
+  height: 11px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+::-webkit-scrollbar-thumb {
+  border: 2px solid transparent;
+  border-radius: 999px;
+  background: linear-gradient(180deg, rgba(212, 162, 75, 0.44), rgba(96, 65, 28, 0.7));
+  background-clip: padding-box;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, rgba(212, 162, 75, 0.58), rgba(96, 65, 28, 0.84));
+  background-clip: padding-box;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+
+.skip-link {
+  position: absolute;
+  left: 1rem;
+  top: 1rem;
+  z-index: 60;
+  transform: translateY(-200%);
+  border-radius: 999px;
+  border: 1px solid var(--border-subtle);
+  background: var(--panel);
+  color: var(--text-primary);
+  padding: 0.75rem 1rem;
+}
+
+.skip-link:focus-visible {
+  transform: translateY(0);
 }
 
 .leaflet-container {
   font-family: var(--font-body), sans-serif;
 }
 
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
