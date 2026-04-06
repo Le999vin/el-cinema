@@ -1,5 +1,9 @@
+import { Calendar } from "lucide-react";
+
+import { ShowtimesFilterBar } from "@/components/showtimes/showtimes-filter-bar";
 import { ShowtimesTable } from "@/components/showtimes/showtimes-table";
 import { Card } from "@/components/ui/card";
+import { EmptyState } from "@/components/ui/empty-state";
 import { loadCinemasCatalog, loadMoviesCatalog } from "@/features/catalog/load-catalog";
 import { getShowtimeRows } from "@/features/showtimes/get-showtimes";
 import { parseShowtimesPageSearchParams, type PageSearchParamsInput } from "@/lib/page-search-params";
@@ -20,54 +24,28 @@ export default async function ShowtimesPage({ searchParams }: ShowtimesPageProps
   return (
     <div className="space-y-6">
       <Card>
-        <form className="grid gap-3 lg:grid-cols-[160px_1fr_1fr_130px_130px]" action="/showtimes" method="GET">
-          <select name="mode" defaultValue={mode} className="h-11 rounded-xl border border-[color:var(--border-subtle)] bg-[color:var(--panel-soft)] px-3 text-sm">
-            <option value="today">Today</option>
-            <option value="tomorrow">Tomorrow</option>
-            <option value="week">This Week</option>
-          </select>
-
-          <select name="movieId" defaultValue={movieId} className="h-11 rounded-xl border border-[color:var(--border-subtle)] bg-[color:var(--panel-soft)] px-3 text-sm">
-            <option value="">All movies</option>
-            {movies.map((movie) => (
-              <option key={movie.id} value={movie.id}>
-                {movie.title}
-              </option>
-            ))}
-          </select>
-
-          <select name="cinemaId" defaultValue={cinemaId} className="h-11 rounded-xl border border-[color:var(--border-subtle)] bg-[color:var(--panel-soft)] px-3 text-sm">
-            <option value="">All cinemas</option>
-            {cinemas.map((cinema) => (
-              <option key={cinema.id} value={cinema.id}>
-                {cinema.name}
-              </option>
-            ))}
-          </select>
-
-          <input
-            name="timeStart"
-            type="number"
-            min={0}
-            max={23}
-            placeholder="From"
-            defaultValue={timeStart}
-            className="h-11 rounded-xl border border-[color:var(--border-subtle)] bg-[color:var(--panel-soft)] px-3 text-sm"
-          />
-
-          <input
-            name="timeEnd"
-            type="number"
-            min={0}
-            max={23}
-            placeholder="To"
-            defaultValue={timeEnd}
-            className="h-11 rounded-xl border border-[color:var(--border-subtle)] bg-[color:var(--panel-soft)] px-3 text-sm"
-          />
-        </form>
+        <ShowtimesFilterBar
+          defaultMode={mode}
+          defaultMovieId={movieId}
+          defaultCinemaId={cinemaId}
+          defaultTimeStart={timeStart != null ? String(timeStart) : ""}
+          defaultTimeEnd={timeEnd != null ? String(timeEnd) : ""}
+          movies={movies.map((m) => ({ id: m.id, title: m.title }))}
+          cinemas={cinemas.map((c) => ({ id: c.id, name: c.name }))}
+        />
       </Card>
 
-      <ShowtimesTable rows={rows} />
+      {rows.length ? (
+        <ShowtimesTable rows={rows} />
+      ) : (
+        <Card>
+          <EmptyState
+            icon={Calendar}
+            title="No showtimes match"
+            description="Broaden your time window or change filters"
+          />
+        </Card>
+      )}
     </div>
   );
 }

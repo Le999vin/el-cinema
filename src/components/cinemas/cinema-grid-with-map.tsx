@@ -2,6 +2,7 @@
 
 import dynamic from "next/dynamic";
 import { useState } from "react";
+import { List, Map } from "lucide-react";
 
 import { CinemaCard } from "@/components/cinemas/cinema-card";
 import { Button } from "@/components/ui/button";
@@ -22,8 +23,8 @@ export const CinemaGridWithMap = ({ summaries, mapCinemas }: CinemaGridWithMapPr
   return (
     <div className="space-y-5">
       <div className="flex items-center justify-end">
-        <Button variant="secondary" onClick={() => setMapMode((current) => !current)}>
-          {mapMode ? "Show list" : "Show map"}
+        <Button variant="secondary" onClick={() => setMapMode((current) => !current)} className="gap-2">
+          {mapMode ? <><List size={16} /> Show list</> : <><Map size={16} /> Show map</>}
         </Button>
       </div>
 

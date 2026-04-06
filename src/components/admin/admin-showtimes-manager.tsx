@@ -2,8 +2,12 @@
 
 import { format } from "date-fns";
 import { useState, useTransition } from "react";
+import { Trash2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Select } from "@/components/ui/select";
+import { useToast } from "@/components/ui/toast-provider";
 import type { Showtime } from "@/domain/types";
 
 interface AdminShowtimesManagerProps {
@@ -13,9 +17,28 @@ interface AdminShowtimesManagerProps {
 }
 
 export const AdminShowtimesManager = ({ showtimes, movies, cinemas }: AdminShowtimesManagerProps) => {
+  const { toast } = useToast();
   const [rows, setRows] = useState(showtimes);
-  const [message, setMessage] = useState<string | null>(null);
+  const [confirmId, setConfirmId] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
+
+  const handleDelete = (id: string) => {
+    startTransition(async () => {
+      const response = await fetch("/api/admin/showtimes", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id }),
+      });
+
+      if (response.ok) {
+        setRows((current) => current.filter((entry) => entry.id !== id));
+        setConfirmId(null);
+        toast("Showtime deleted", "success");
+      } else {
+        toast("Failed to delete showtime", "error");
+      }
+    });
+  };
 
   return (
     <div className="space-y-6">
@@ -26,7 +49,6 @@ export const AdminShowtimesManager = ({ showtimes, movies, cinemas }: AdminShowt
           const formData = new FormData(event.currentTarget);
 
           startTransition(async () => {
-            setMessage(null);
             const response = await fetch("/api/admin/showtimes", {
               method: "POST",
               headers: { "Content-Type": "application/json" },
@@ -43,7 +65,7 @@ export const AdminShowtimesManager = ({ showtimes, movies, cinemas }: AdminShowt
             const payload = (await response.json()) as { data?: { showtime?: Showtime }; error?: { message?: string } };
 
             if (!response.ok || !payload.data?.showtime) {
-              setMessage(payload.error?.message ?? "Failed to create showtime.");
+              toast(payload.error?.message ?? "Failed to create showtime.", "error");
               return;
             }
 
@@ -52,42 +74,36 @@ export const AdminShowtimesManager = ({ showtimes, movies, cinemas }: AdminShowt
                 (a, b) => new Date(a.startsAt).getTime() - new Date(b.startsAt).getTime(),
               ),
             );
-            setMessage("Showtime created.");
+            toast("Showtime created", "success");
             event.currentTarget.reset();
           });
         }}
       >
-        <select name="movieId" required className="h-10 rounded-lg border border-[color:var(--border-subtle)] bg-[color:var(--panel-soft)] px-2 text-sm">
+        <Select name="movieId" required>
           <option value="">Movie</option>
           {movies.map((movie) => (
-            <option key={movie.id} value={movie.id}>
-              {movie.title}
-            </option>
+            <option key={movie.id} value={movie.id}>{movie.title}</option>
           ))}
-        </select>
-        <select name="cinemaId" required className="h-10 rounded-lg border border-[color:var(--border-subtle)] bg-[color:var(--panel-soft)] px-2 text-sm">
+        </Select>
+        <Select name="cinemaId" required>
           <option value="">Cinema</option>
           {cinemas.map((cinema) => (
-            <option key={cinema.id} value={cinema.id}>
-              {cinema.name}
-            </option>
+            <option key={cinema.id} value={cinema.id}>{cinema.name}</option>
           ))}
-        </select>
+        </Select>
         <input
           name="startsAt"
           type="datetime-local"
           required
-          className="h-10 rounded-lg border border-[color:var(--border-subtle)] bg-[color:var(--panel-soft)] px-2 text-sm"
+          className="h-11 rounded-xl border border-[color:var(--border-subtle)] bg-[color:var(--panel-soft)] px-3 text-sm text-[color:var(--text-primary)] focus:border-[color:var(--accent-soft)] focus:outline-none"
         />
-        <input name="language" defaultValue="EN" required className="h-10 rounded-lg border border-[color:var(--border-subtle)] bg-[color:var(--panel-soft)] px-2 text-sm" />
-        <input name="subtitleLanguage" placeholder="Subtitles" className="h-10 rounded-lg border border-[color:var(--border-subtle)] bg-[color:var(--panel-soft)] px-2 text-sm" />
-        <input name="room" placeholder="Room" className="h-10 rounded-lg border border-[color:var(--border-subtle)] bg-[color:var(--panel-soft)] px-2 text-sm" />
+        <Input name="language" defaultValue="EN" required placeholder="Language" />
+        <Input name="subtitleLanguage" placeholder="Subtitles" />
+        <Input name="room" placeholder="Room" />
         <Button type="submit" disabled={isPending}>
           Add
         </Button>
       </form>
-
-      {message ? <p className="text-sm text-[color:var(--text-muted)]">{message}</p> : null}
 
       <div className="space-y-2">
         {rows.map((row) => (
@@ -96,30 +112,39 @@ export const AdminShowtimesManager = ({ showtimes, movies, cinemas }: AdminShowt
               <p className="text-[color:var(--text-primary)]">{format(new Date(row.startsAt), "EEE, dd MMM yyyy - HH:mm")}</p>
               <p className="text-[color:var(--text-muted)]">{row.language}{row.subtitleLanguage ? ` • ${row.subtitleLanguage}` : ""}{row.room ? ` • ${row.room}` : ""}</p>
             </div>
-            <Button
-              variant="ghost"
-              disabled={isPending}
-              onClick={() => {
-                startTransition(async () => {
-                  const response = await fetch("/api/admin/showtimes", {
-                    method: "DELETE",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ id: row.id }),
-                  });
-
-                  if (response.ok) {
-                    setRows((current) => current.filter((entry) => entry.id !== row.id));
-                    setMessage("Showtime deleted.");
-                  }
-                });
-              }}
-            >
-              Delete
-            </Button>
+            {confirmId === row.id ? (
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-[color:var(--text-muted)]">Confirm delete?</span>
+                <Button
+                  variant="ghost"
+                  disabled={isPending}
+                  className="h-7 px-2 text-xs text-red-400 hover:text-red-300"
+                  onClick={() => handleDelete(row.id)}
+                >
+                  Yes, delete
+                </Button>
+                <Button
+                  variant="ghost"
+                  className="h-7 px-2 text-xs"
+                  onClick={() => setConfirmId(null)}
+                >
+                  Cancel
+                </Button>
+              </div>
+            ) : (
+              <Button
+                variant="ghost"
+                disabled={isPending}
+                className="gap-1.5 text-[color:var(--text-muted)] hover:text-red-400"
+                onClick={() => setConfirmId(row.id)}
+              >
+                <Trash2 size={14} />
+                Delete
+              </Button>
+            )}
           </div>
         ))}
       </div>
     </div>
   );
 };
-

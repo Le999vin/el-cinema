@@ -1,9 +1,12 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState, useTransition } from "react";
+import { useTransition } from "react";
 
 import { Button } from "@/components/ui/button";
+import { Select } from "@/components/ui/select";
+import { Spinner } from "@/components/ui/spinner";
+import { useToast } from "@/components/ui/toast-provider";
 import type { UserRating } from "@/domain/types";
 
 const fields = ["story", "tension", "acting", "visuals", "soundtrack", "overall"] as const;
@@ -21,8 +24,8 @@ const defaultRatings = {
 
 export const RatingForm = ({ movieId, initial }: { movieId: string; initial?: UserRating | null }) => {
   const router = useRouter();
+  const { toast } = useToast();
   const [isPending, startTransition] = useTransition();
-  const [message, setMessage] = useState<string | null>(null);
 
   return (
     <form
@@ -32,7 +35,6 @@ export const RatingForm = ({ movieId, initial }: { movieId: string; initial?: Us
         const formData = new FormData(event.currentTarget);
 
         startTransition(async () => {
-          setMessage(null);
           const response = await fetch("/api/user/ratings", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -58,11 +60,11 @@ export const RatingForm = ({ movieId, initial }: { movieId: string; initial?: Us
 
           if (!response.ok) {
             const payload = (await response.json()) as { error?: { message?: string } };
-            setMessage(payload.error?.message ?? "Could not save rating.");
+            toast(payload.error?.message ?? "Could not save rating.", "error");
             return;
           }
 
-          setMessage("Rating saved.");
+          toast("Rating saved", "success");
           router.refresh();
         });
       }}
@@ -73,17 +75,16 @@ export const RatingForm = ({ movieId, initial }: { movieId: string; initial?: Us
         {fields.map((field) => (
           <label key={field} className="space-y-1 text-sm text-[color:var(--text-secondary)]">
             <span className="capitalize">{field}</span>
-            <select
+            <Select
               name={field}
               defaultValue={initial ? String(initial[field]) : String(defaultRatings[field])}
-              className="h-10 w-full rounded-lg border border-[color:var(--border-subtle)] bg-[color:var(--panel)] px-2"
             >
               {[0.5, 1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5].map((value) => (
                 <option key={value} value={value}>
                   {value.toFixed(1)}
                 </option>
               ))}
-            </select>
+            </Select>
           </label>
         ))}
       </div>
@@ -94,13 +95,14 @@ export const RatingForm = ({ movieId, initial }: { movieId: string; initial?: Us
           name="note"
           defaultValue={initial?.note ?? ""}
           rows={3}
-          className="w-full rounded-lg border border-[color:var(--border-subtle)] bg-[color:var(--panel)] px-3 py-2"
+          className="w-full rounded-lg border border-[color:var(--border-subtle)] bg-[color:var(--panel)] px-3 py-2 text-sm text-[color:var(--text-primary)] placeholder:text-[color:var(--text-muted)] focus:border-[color:var(--accent-soft)] focus:outline-none"
           placeholder="What stood out for you?"
         />
       </label>
 
       <div className="flex items-center gap-3">
-        <Button type="submit" disabled={isPending}>
+        <Button type="submit" disabled={isPending} className="gap-2">
+          {isPending && <Spinner className="h-4 w-4" />}
           {isPending ? "Saving..." : "Save rating"}
         </Button>
         {initial ? (
@@ -115,8 +117,8 @@ export const RatingForm = ({ movieId, initial }: { movieId: string; initial?: Us
                   headers: { "Content-Type": "application/json" },
                   body: JSON.stringify({ movieId }),
                 });
+                toast("Rating removed", "success");
                 router.refresh();
-                setMessage("Rating removed.");
               });
             }}
           >
@@ -124,9 +126,6 @@ export const RatingForm = ({ movieId, initial }: { movieId: string; initial?: Us
           </Button>
         ) : null}
       </div>
-
-      {message ? <p className="text-xs text-[color:var(--text-muted)]">{message}</p> : null}
     </form>
   );
 };
-

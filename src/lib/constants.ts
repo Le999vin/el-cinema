@@ -25,21 +25,23 @@ export const MOVIE_GENRES = [
   "Western",
 ] as const;
 
-export const NAV_ITEMS = [
-  { href: "/", label: "Home" },
-  { href: "/cinemas", label: "Cinemas" },
-  { href: "/movies", label: "Movies" },
-  { href: "/series", label: "Series" },
-  { href: "/showtimes", label: "Showtimes" },
-  { href: "/recommendations", label: "Recommendations" },
-  { href: "/dashboard", label: "Dashboard" },
-] as const;
+export type NavItem = { href: string; label: string; icon: string };
 
-export const LOWER_NAV_ITEMS = [
-  { href: "/watchlist", label: "Watchlist" },
-  { href: "/profile", label: "Profile" },
-  { href: "/settings", label: "Settings" },
-] as const;
+export const NAV_ITEMS: NavItem[] = [
+  { href: "/", label: "Home", icon: "Home" },
+  { href: "/cinemas", label: "Cinemas", icon: "MapPin" },
+  { href: "/movies", label: "Movies", icon: "Film" },
+  { href: "/series", label: "Series", icon: "Tv" },
+  { href: "/showtimes", label: "Showtimes", icon: "Calendar" },
+  { href: "/recommendations", label: "Recommendations", icon: "Sparkles" },
+  { href: "/dashboard", label: "Dashboard", icon: "LayoutDashboard" },
+];
+
+export const LOWER_NAV_ITEMS: NavItem[] = [
+  { href: "/watchlist", label: "Watchlist", icon: "Bookmark" },
+  { href: "/profile", label: "Profile", icon: "User" },
+  { href: "/settings", label: "Settings", icon: "Settings" },
+];
 
 export const SESSION_COOKIE_NAME = "cinemascope_session";
 export const SESSION_DURATION_DAYS = 14;

@@ -1,5 +1,9 @@
+import { Film } from "lucide-react";
+
+import { MoviesFilterBar } from "@/components/movies/movies-filter-bar";
 import { MovieCard } from "@/components/movies/movie-card";
 import { Card } from "@/components/ui/card";
+import { EmptyState } from "@/components/ui/empty-state";
 import { getMovies } from "@/features/movies/get-movies";
 import { loadMoviesCatalog } from "@/features/catalog/load-catalog";
 import { parseMoviesPageSearchParams, type PageSearchParamsInput } from "@/lib/page-search-params";
@@ -21,35 +25,12 @@ export default async function MoviesPage({ searchParams }: MoviesPageProps) {
   return (
     <div className="space-y-6">
       <Card>
-        <form className="grid gap-3 md:grid-cols-[1fr_200px_180px]" action="/movies" method="GET">
-          <input
-            name="search"
-            defaultValue={search}
-            placeholder="Search title, overview, or mood"
-            className="h-11 rounded-xl border border-[color:var(--border-subtle)] bg-[color:var(--panel-soft)] px-4 text-sm"
-          />
-          <select
-            name="genre"
-            defaultValue={genre}
-            className="h-11 rounded-xl border border-[color:var(--border-subtle)] bg-[color:var(--panel-soft)] px-3 text-sm"
-          >
-            <option value="">All genres</option>
-            {genres.map((entry) => (
-              <option key={entry} value={entry}>
-                {entry}
-              </option>
-            ))}
-          </select>
-          <select
-            name="sort"
-            defaultValue={sort}
-            className="h-11 rounded-xl border border-[color:var(--border-subtle)] bg-[color:var(--panel-soft)] px-3 text-sm"
-          >
-            <option value="release-date">Sort: Newest</option>
-            <option value="title">Sort: Title</option>
-            <option value="runtime">Sort: Runtime</option>
-          </select>
-        </form>
+        <MoviesFilterBar
+          defaultSearch={search}
+          defaultGenre={genre}
+          defaultSort={sort}
+          genres={genres}
+        />
       </Card>
 
       {movies.length ? (
@@ -60,7 +41,11 @@ export default async function MoviesPage({ searchParams }: MoviesPageProps) {
         </div>
       ) : (
         <Card>
-          <p className="text-sm text-[color:var(--text-muted)]">No movies match your current filters.</p>
+          <EmptyState
+            icon={Film}
+            title="No movies found"
+            description="Try adjusting your filters or clearing the search"
+          />
         </Card>
       )}
     </div>

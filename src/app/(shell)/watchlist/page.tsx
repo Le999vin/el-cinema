@@ -1,6 +1,9 @@
-import Link from "next/link";
+import { Bookmark } from "lucide-react";
 
+import { MovieCard } from "@/components/movies/movie-card";
+import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
+import { EmptyState } from "@/components/ui/empty-state";
 import { loadMoviesCatalog } from "@/features/catalog/load-catalog";
 import { hasDatabase } from "@/lib/env";
 import { requireUser } from "@/services/auth/auth-service";
@@ -20,27 +23,30 @@ export default async function WatchlistPage() {
   return (
     <div className="space-y-6">
       <Card>
-        <h2 className="font-[family-name:var(--font-display)] text-5xl">Watchlist</h2>
+        <div className="flex items-baseline gap-3">
+          <h2 className="font-[family-name:var(--font-display)] text-5xl">Watchlist</h2>
+          {watchlist.length > 0 && (
+            <Badge>{watchlist.length} movie{watchlist.length !== 1 ? "s" : ""}</Badge>
+          )}
+        </div>
         <p className="mt-2 text-sm text-[color:var(--text-muted)]">Movies you marked to watch soon.</p>
       </Card>
 
-      <div className="grid gap-4 lg:grid-cols-2">
-        {watchlist.map((movie) => (
-          <Card key={movie.id}>
-            <Link href={`/movies/${movie.id}`} className="text-xl text-[color:var(--text-primary)]">
-              {movie.title}
-            </Link>
-            <p className="mt-2 text-sm text-[color:var(--text-muted)]">{movie.genres.join(" • ")}</p>
-          </Card>
-        ))}
-      </div>
-
-      {!watchlist.length ? (
+      {watchlist.length ? (
+        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+          {watchlist.map((movie) => (
+            <MovieCard key={movie.id} movie={movie} onWatchlist />
+          ))}
+        </div>
+      ) : (
         <Card>
-          <p className="text-sm text-[color:var(--text-muted)]">No movies in watchlist yet.</p>
+          <EmptyState
+            icon={Bookmark}
+            title="Your watchlist is empty"
+            description="Browse movies and add them to your watchlist"
+          />
         </Card>
-      ) : null}
+      )}
     </div>
   );
 }
-

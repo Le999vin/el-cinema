@@ -2,6 +2,7 @@ import { Suspense } from "react";
 
 import { Sidebar } from "@/components/layout/sidebar";
 import { TopBar } from "@/components/layout/top-bar";
+import { ToastProvider } from "@/components/ui/toast-provider";
 import { resolveCurrentUser } from "@/services/auth/auth-service";
 
 export default async function ShellLayout({ children }: { children: React.ReactNode }) {
@@ -10,17 +11,13 @@ export default async function ShellLayout({ children }: { children: React.ReactN
   return (
     <div className="flex min-h-screen bg-[color:var(--background)]">
       <Sidebar />
-      <div className="flex min-h-screen min-w-0 flex-1 flex-col">
-        <Suspense
-          fallback={
-            <header className="border-b border-[color:var(--border-subtle)] px-10 py-6">
-              <p className="text-sm text-[color:var(--text-muted)]">Loading...</p>
-            </header>
-          }
-        >
+      <div className="flex min-h-screen w-full min-w-0 flex-1 flex-col">
+        <Suspense fallback={<header className="h-[88px] border-b border-[color:var(--border-subtle)]" />}>
           <TopBar displayName={user?.displayName ?? null} />
         </Suspense>
-        <main className="flex-1 px-10 py-8">{children}</main>
+        <ToastProvider>
+          <main className="flex-1 px-4 py-6 lg:px-10 lg:py-8">{children}</main>
+        </ToastProvider>
       </div>
     </div>
   );
